@@ -1,0 +1,29 @@
+Based on the files provided, here is the breakdown for building and running your project in Replit, along with a critical fix needed for the API to work.
+1. Configuration Status
+ * Run Command: Your .replit file is correctly set to run = "npm run dev". This starts the Express server in development mode, which also spins up Vite for the frontend.
+ * Build Script: Your package.json defines build as tsx script/build.ts. This custom script builds the client (Vite) and bundles the server (esbuild) into a single entry point dist/index.cjs, which is excellent for performance.
+2. Critical Fix: Deployment Target
+You currently have deploymentTarget = "static" in your .replit file.
+ * The Problem: This setting tells Replit to only host the frontend files (HTML/JS/CSS). It will not run your Express server.
+ * The Consequence: Your "Bridge" architecture will fail because the API endpoint /api/gamestate will not exist to receive data from your PC.
+ * The Fix: You must change the deployment target to run the Node.js server.
+Action Item:
+Update your .replit file's [deployment] section to:
+[deployment]
+run = ["npm", "start"]
+deploymentTarget = "cloudrun" # or remove this line to default to a standard Repl run
+
+Note: If you are just hitting the big green "Run" button in the editor, it uses the run command defined at the top of the file (npm run dev), which will work correctly for the API.
+3. How to Build & Run
+ * Development (Standard): Just press Run in Replit. It executes npm run dev.
+ * Production Build: To test the production build manually in the shell:
+   * Run npm run build (This creates the dist folder).
+   * Run npm start (This runs the optimized dist/index.cjs server).
+4. Connecting the Bridge
+Once your Replit project is running (either via "Run" or a Deployment), you will get a public URL (e.g., https://civ-companion.yourname.replit.app).
+Action Item:
+Update your local bridge.js script on your PC to point to this URL:
+// In your local bridge.js
+axios.post('https://civ-companion.yourname.replit.app/api/gamestate', payload)
+
+Do not use localhost:5000 in the bridge script unless the script is running inside the Replit container itself (which it isn't).
