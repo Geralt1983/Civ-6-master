@@ -1,13 +1,16 @@
-import { GameState, mockGameState } from "@/lib/mockData";
+import { mockGameState } from "@/lib/mockData";
 import { StatCard } from "@/components/civ/StatCard";
 import { ActionList } from "@/components/civ/ActionList";
 import { AnalysisPanel } from "@/components/civ/AnalysisPanel";
 import { Beaker, Music, Anchor, Coins, Hammer, Wheat, Menu, Settings, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useGameState } from "@/hooks/useGameState";
+import { Spinner } from "@/components/ui/spinner";
 import generatedImage from '@assets/generated_images/a_dark,_textured_hex_map_background_for_a_strategy_game_interface.png';
 
 export default function Dashboard() {
-  const state: GameState = mockGameState;
+  const { gameState, isLoading } = useGameState();
+  const state = gameState || mockGameState;
 
   return (
     <div className="min-h-screen w-full text-foreground flex flex-col bg-cover bg-center bg-no-repeat bg-fixed" 
@@ -55,6 +58,21 @@ export default function Dashboard() {
 
       {/* Main Content */}
       <main className="flex-1 p-6 grid grid-cols-12 gap-6 overflow-hidden h-[calc(100vh-4rem)]">
+        
+        {/* Connection Status Indicator */}
+        {isLoading && !gameState && (
+          <div className="col-span-12 glass-panel rounded-lg p-4 flex items-center justify-center gap-3">
+            <Spinner className="w-5 h-5 text-accent" />
+            <span className="text-sm text-muted-foreground">Waiting for game data from bridge...</span>
+          </div>
+        )}
+        
+        {gameState && (
+          <div className="col-span-12 glass-panel rounded-lg p-2 flex items-center justify-center gap-3 bg-accent/10 border-accent/30">
+            <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
+            <span className="text-xs text-accent font-mono">LIVE CONNECTION ACTIVE</span>
+          </div>
+        )}
         
         {/* Left Column: Stats & Actions */}
         <div className="col-span-3 flex flex-col gap-6 h-full overflow-y-auto custom-scrollbar pb-20">
