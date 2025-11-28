@@ -4,6 +4,7 @@ import { z } from "zod";
 
 export const gameStates = pgTable("game_states", {
   id: serial("id").primaryKey(),
+  gameSpeed: text("game_speed"),
   turn: integer("turn").notNull(),
   era: text("era").notNull(),
   leader: text("leader").notNull(),

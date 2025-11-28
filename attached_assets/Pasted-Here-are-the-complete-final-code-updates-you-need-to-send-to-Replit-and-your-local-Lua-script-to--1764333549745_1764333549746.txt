@@ -1,0 +1,511 @@
+Here are the complete, final code updates you need to send to Replit (and your local Lua script) to implement the Game Speed scaling and the Strategy Guide integration.
+Part 1: The Local Mod (Your PC)
+File: DataExporter.lua
+Action: Replace your existing script with this version that detects Game Speed.
+-- DataExporter.lua
+function OnTurnBegin()
+    local iPlayer = Game.GetLocalPlayer();
+    if (iPlayer == -1) then return; end
+    local pPlayer = Players[iPlayer];
+    local pPlayerConfig = PlayerConfigurations[iPlayer];
+
+    -- 1. GET GAME SPEED & ERA
+    local speedTypeId = GameConfiguration.GetGameSpeedType();
+    local gameSpeed = GameInfo.GameSpeeds[speedTypeId].GameSpeedType;
+    local eraIndex = pPlayer:GetEra();
+    local eraName = GameInfo.Eras[eraIndex].Name;
+
+    -- 2. GATHER YIELDS
+    local science = pPlayer:GetTechs():GetScienceYield();
+    local culture = pPlayer:GetCulture():GetCultureYield();
+    local gold = pPlayer:GetTreasury():GetGoldBalance();
+    local faith = pPlayer:GetReligion():GetFaithYield();
+
+    -- 3. SUM CITY YIELDS (Production/Food)
+    local totalProd = 0;
+    local totalFood = 0;
+    local cities = pPlayer:GetCities();
+    for i, pCity in cities:Members() do
+        totalFood = totalFood + pCity:GetYield(0); -- 0 = Food
+        totalProd = totalProd + pCity:GetYield(1); -- 1 = Production
+    end
+
+    -- 4. ACTIVE RESEARCH
+    local pTechs = pPlayer:GetTechs();
+    local currentTechID = pTechs:GetResearchingTech();
+    local techName = "None";
+    local techProgress = 0;
+    local techTurns = 0;
+    
+    if (currentTechID ~= -1) then
+        local techInfo = GameInfo.Technologies[currentTechID];
+        techName = (techInfo and techInfo.Name) and Locale.Lookup(techInfo.Name) or "Unknown";
+        local cost = pTechs:GetResearchCost(currentTechID);
+        local current = pTechs:GetResearchProgress(currentTechID);
+        if cost > 0 then techProgress = math.floor((current / cost) * 100); end
+        if science > 0 then techTurns = math.ceil((cost - current) / science); end
+    end
+
+    -- 5. ACTIVE CIVIC
+    local pCulture = pPlayer:GetCulture();
+    local currentCivicID = pCulture:GetProgressingCivic();
+    local civicName = "None";
+    local civicProgress = 0;
+    local civicTurns = 0;
+
+    if (currentCivicID ~= -1) then
+        local civicInfo = GameInfo.Civics[currentCivicID];
+        civicName = (civicInfo and civicInfo.Name) and Locale.Lookup(civicInfo.Name) or "Unknown";
+        local cost = pCulture:GetCultureCost(currentCivicID);
+        local current = pCulture:GetCulturalProgress(currentCivicID);
+        if cost > 0 then civicProgress = math.floor((current / cost) * 100); end
+        if culture > 0 then civicTurns = math.ceil((cost - current) / culture); end
+    end
+
+    -- 6. CONSTRUCT JSON
+    local json = "CIV_DATA_DUMP::{"
+    json = json .. "'gameSpeed':'" .. gameSpeed .. "',"
+    json = json .. "'turn':" .. Game.GetCurrentGameTurn() .. ","
+    json = json .. "'era':'" .. eraName .. "',"
+    json = json .. "'leader':'" .. Locale.Lookup(pPlayerConfig:GetLeaderName()) .. "',"
+    json = json .. "'yields':{"
+        json = json .. "'science':" .. science .. ","
+        json = json .. "'culture':" .. culture .. ","
+        json = json .. "'faith':" .. faith .. ","
+        json = json .. "'gold':" .. gold .. ","
+        json = json .. "'production':" .. totalProd .. ","
+        json = json .. "'food':" .. totalFood
+    json = json .. "},"
+    json = json .. "'currentResearch':{"
+        json = json .. "'name':'" .. techName .. "',"
+        json = json .. "'progress':" .. techProgress .. ","
+        json = json .. "'turnsLeft':" .. techTurns .. ","
+        json = json .. "'icon':'flask'"
+    json = json .. "},"
+    json = json .. "'currentCivic':{"
+        json = json .. "'name':'" .. civicName .. "',"
+        json = json .. "'progress':" .. civicProgress .. ","
+        json = json .. "'turnsLeft':" .. civicTurns .. ","
+        json = json .. "'icon':'scroll'"
+    json = json .. "}"
+    json = json .. "}"
+
+    print(json);
+end
+
+Events.TurnBegin.Add(OnTurnBegin);
+
+Part 2: The Replit Project
+File 1: shared/schema.ts
+Action: Update the schema to accept gameSpeed.
+import { pgTable, text, varchar } from "drizzle-orm/pg-core";
+import { createInsertSchema } from "drizzle-zod";
+import { z } from "zod";
+
+export const users = pgTable("users", {
+  id: varchar("id").primaryKey(),
+  username: text("username").notNull().unique(),
+  password: text("password").notNull(),
+});
+
+export const insertUserSchema = createInsertSchema(users).pick({
+  username: true,
+  password: true,
+});
+
+export type InsertUser = z.infer<typeof insertUserSchema>;
+export type User = typeof users.$inferSelect;
+
+export const gameStateSchema = z.object({
+  gameSpeed: z.string().optional(),
+  turn: z.number(),
+  era: z.string(),
+  leader: z.string(),
+  yields: z.object({
+    science: z.number(),
+    culture: z.number(),
+    faith: z.number(),
+    gold: z.number(),
+    production: z.number(),
+    food: z.number(),
+  }),
+  currentResearch: z.object({
+    name: z.string(),
+    turnsLeft: z.number(),
+    progress: z.number(),
+    icon: z.string().optional(),
+  }),
+  currentCivic: z.object({
+    name: z.string(),
+    turnsLeft: z.number(),
+    progress: z.number(),
+    icon: z.string().optional(),
+  }),
+  alerts: z.array(z.any()).optional(),
+  recommendations: z.array(z.any()).optional(),
+});
+
+export type GameState = z.infer<typeof gameStateSchema>;
+
+File 2: client/src/lib/strategyDb.ts
+Action: Create this NEW file. It holds the "Brain" of the advisor.
+export const BENCHMARKS = [
+  {
+    turn: 30,
+    metrics: { science: 15, culture: 20, production: 15 },
+    advice: "Turn 30 (Online Speed): You should have a Government Plaza and your first district. Aim for Classical Republic."
+  },
+  {
+    turn: 50,
+    metrics: { science: 50, culture: 60, production: 30 },
+    advice: "Turn 50 (Online Speed): 2+ districts in all cities. Prepare for Industrialization. Ensure Serfdom is active."
+  },
+  {
+    turn: 70,
+    metrics: { science: 100, culture: 120, production: 50 },
+    advice: "Turn 70 (Online Speed): Chemistry Tech should be near. PRIORITIZE RESEARCH LABS. Ignore wonders/military until Labs are done."
+  },
+  {
+    turn: 100,
+    metrics: { science: 250, culture: 200, production: 80 },
+    advice: "Turn 100 (Online Speed): Rocketry (Science) or Tanks (Domination) should be unlocked."
+  }
+];
+
+export const CIV_STRATEGIES: Record<string, {
+  name: string;
+  focus: string;
+  keyTechs: string[];
+  keyCivics: string[];
+  tips: string[];
+}> = {
+  "TRAJAN": {
+    name: "Rome (Trajan)",
+    focus: "Domination/Expansion",
+    keyTechs: ["Iron Working", "Engineering"],
+    keyCivics: ["Political Philosophy", "Civil Service"],
+    tips: [
+      "Build Commercial Hubs early. Use free monuments to rush Feudalism.",
+      "Power Spike: Medieval Era with Legions. Build roads to enemy borders.",
+      "Standard expansion: Scout -> Scout -> Settler -> Settler."
+    ]
+  },
+  "GERMANY": {
+    name: "Germany (Frederick)",
+    focus: "Production/Science",
+    keyTechs: ["Apprenticeship", "Industrialization"],
+    keyCivics: ["Guilds"],
+    tips: [
+      "HANSA PLANNING: Place Hansas next to Commercial Hubs (+2 adj).",
+      "Do not ignore culture; you specifically need the 'Guilds' civic for the extra district slot.",
+      "Scale into late game; you can support 1-2 more districts per city than anyone else."
+    ]
+  },
+  "VICTORIA": {
+    name: "England (Victoria)",
+    focus: "Naval/Science",
+    keyTechs: ["Celestial Navigation", "Industrialization"],
+    keyCivics: ["Naval Tradition"],
+    tips: [
+      "RUSH Royal Navy Dockyards. They are cheap and give gold/trade.",
+      "Mid-Game: Use 'Free Inquiry' Golden Age + 'Naval Infrastructure' card to turn Harbor adjacency into massive Science.",
+      "Strategic Resource mines get +1 production."
+    ]
+  },
+  "JADWIGA": {
+    name: "Poland (Jadwiga)",
+    focus: "Religion/Relics",
+    keyTechs: ["Astrology"],
+    keyCivics: ["Divine Right"],
+    tips: [
+      "RELIC RUSH: Found religion ASAP to get a free Relic. Use 'Reliquaries' belief to triple yields.",
+      "Use Culture bombs from Encampments/Forts to steal land.",
+      "Gold from Relics helps fund expansion."
+    ]
+  },
+  "PERICLES": {
+    name: "Greece (Pericles)",
+    focus: "Culture",
+    keyTechs: ["Printing"],
+    keyCivics: ["Drama and Poetry", "Opera_Ballet"],
+    tips: [
+      "ACROPOLIS: Must be on Hills. Spam them for easy envoys.",
+      "Suzerainty King: +5% Culture per city-state you control. Prioritize Amani governor.",
+      "Culture Victory: Get to 'Cultural Heritage' civic for the tourism boost."
+    ]
+  }
+};
+
+export const GENERAL_ADVICE = [
+  {
+    condition: (state: any) => state.turn > 35 && state.turn < 50 && !state.currentCivic?.name?.includes("Feudalism"),
+    type: "civic",
+    title: "RUSH FEUDALISM",
+    desc: "Approaching mid-game. Feudalism unlocks Serfdom (+2 Builder Charges). This is the most important economic spike."
+  },
+  {
+    condition: (state: any) => state.turn > 60 && state.yields.science < 80,
+    type: "tech",
+    title: "Low Science Warning",
+    desc: "You are falling behind benchmarks. Build Campuses/Libraries or prepare to pillage Campuses."
+  },
+  {
+    condition: (state: any) => state.turn > 90 && !state.currentResearch?.name?.includes("Combustion"),
+    type: "tech",
+    title: "Modern War Prep",
+    desc: "Late game domination requires Tanks (Combustion). Start pre-building Cuirassiers to upgrade them cheaply."
+  }
+];
+
+File 3: client/src/lib/advisor.ts
+Action: Create this NEW file. It holds the logic to scale game speed and generate advice.
+import { GameState } from "@shared/schema";
+import { BENCHMARKS, CIV_STRATEGIES, GENERAL_ADVICE } from "./strategyDb";
+
+// Multipliers to convert YOUR speed back to ONLINE speed (Turn 30)
+const SPEED_MULTIPLIERS: Record<string, number> = {
+  "GAMESPEED_ONLINE": 1,
+  "GAMESPEED_QUICK": 1.33,
+  "GAMESPEED_STANDARD": 2,
+  "GAMESPEED_EPIC": 3,
+  "GAMESPEED_MARATHON": 6
+};
+
+export interface Recommendation {
+  id: number;
+  category: 'city' | 'unit' | 'tech' | 'civic';
+  title: string;
+  description: string;
+  priority: 'high' | 'medium' | 'low';
+}
+
+export function generateRecommendations(state: GameState): Recommendation[] {
+  const recs: Recommendation[] = [];
+  let idCounter = 1;
+
+  // 1. NORMALIZE TURN (Convert everything to "Online Speed" equivalent)
+  const multiplier = state.gameSpeed ? (SPEED_MULTIPLIERS[state.gameSpeed] || 1) : 1;
+  const normalizedTurn = state.turn / multiplier;
+
+  // 2. BENCHMARK CHECKS
+  // Check if we are near a benchmark turn (+/- 5 turns)
+  const benchmark = BENCHMARKS.find(b => 
+    normalizedTurn >= b.turn - 5 && normalizedTurn <= b.turn + 5
+  );
+  
+  if (benchmark) {
+    if (state.yields.science < benchmark.metrics.science) {
+      recs.push({
+        id: idCounter++,
+        category: 'city',
+        title: `Science Lagging (Turn ${state.turn})`,
+        description: `Target: ${benchmark.metrics.science} (Adjusted for speed). ${benchmark.advice}`,
+        priority: 'high'
+      });
+    }
+    if (state.yields.culture < benchmark.metrics.culture) {
+      recs.push({
+        id: idCounter++,
+        category: 'civic',
+        title: `Culture Lagging (Turn ${state.turn})`,
+        description: `Target: ${benchmark.metrics.culture}. Vital for government unlocks.`,
+        priority: 'high'
+      });
+    }
+  }
+
+  // 3. CIV SPECIFIC STRATEGIES
+  const civKey = Object.keys(CIV_STRATEGIES).find(key => 
+    state.leader.toUpperCase().includes(key) || 
+    state.leader.toUpperCase().includes(CIV_STRATEGIES[key].name.toUpperCase())
+  );
+
+  if (civKey) {
+    const strat = CIV_STRATEGIES[civKey];
+    if (strat.keyTechs.length > 0) {
+      recs.push({
+        id: idCounter++,
+        category: 'tech',
+        title: `${strat.name} Tech Path`,
+        description: `Prioritize: ${strat.keyTechs.join(", ")}.`,
+        priority: 'medium'
+      });
+    }
+    const randomTip = strat.tips[state.turn % strat.tips.length]; 
+    recs.push({
+      id: idCounter++,
+      category: 'city',
+      title: `${strat.name} Strategy`,
+      description: randomTip,
+      priority: 'low'
+    });
+  }
+
+  // 4. GENERAL RULES (Scaled by Turn)
+  GENERAL_ADVICE.forEach(rule => {
+    // Pass a "Virtual State" to the rule so it checks the Normalized Turn
+    const virtualState = { ...state, turn: normalizedTurn };
+    
+    if (rule.condition(virtualState)) {
+      recs.push({
+        id: idCounter++,
+        category: rule.type as any,
+        title: rule.title,
+        description: rule.desc,
+        priority: 'high'
+      });
+    }
+  });
+
+  return recs;
+}
+
+File 4: client/src/pages/home.tsx
+Action: Connect the new advisor to your UI.
+import { useQuery } from "@tanstack/react-query";
+import { GameState } from "@shared/schema";
+import { mockGameState } from "@/lib/mockData";
+import { StatCard } from "@/components/civ/StatCard";
+import { ActionList } from "@/components/civ/ActionList";
+import { AnalysisPanel } from "@/components/civ/AnalysisPanel";
+import { Beaker, Music, Anchor, Coins, Hammer, Wheat, Menu, Settings, User } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import generatedImage from '@assets/generated_images/a_dark,_textured_hex_map_background_for_a_strategy_game_interface.png';
+import { generateRecommendations } from "@/lib/advisor"; // Import Advisor
+
+export default function Dashboard() {
+  const { data: serverState } = useQuery<GameState>({
+    queryKey: ["gamestate"],
+    queryFn: async () => {
+      const res = await fetch("/api/gamestate");
+      if (!res.ok) return null;
+      return res.json();
+    },
+    refetchInterval: 2000,
+  });
+
+  const baseState = serverState || mockGameState;
+
+  // Generate dynamic recommendations based on the live state
+  const dynamicRecs = generateRecommendations(baseState);
+  
+  const state = {
+    ...baseState,
+    recommendations: dynamicRecs.length > 0 ? dynamicRecs : baseState.recommendations
+  };
+
+  return (
+    <div className="min-h-screen w-full text-foreground flex flex-col bg-cover bg-center bg-no-repeat bg-fixed" 
+         style={{ backgroundImage: `url(${generatedImage})`, backgroundBlendMode: 'overlay' }}>
+      
+      {/* Top Bar */}
+      <header className="h-16 border-b border-white/10 glass-panel flex items-center justify-between px-6 sticky top-0 z-50">
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 rounded-full bg-primary/20 border border-primary/50 flex items-center justify-center">
+            <span className="font-serif font-bold text-primary text-xl">VI</span>
+          </div>
+          <div>
+            <h1 className="font-serif text-lg leading-none text-primary tracking-widest">CIVILIZATION VI</h1>
+            <span className="text-xs font-mono text-muted-foreground tracking-widest uppercase">Companion Intelligence</span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-8">
+          <div className="text-center">
+            <span className="text-[10px] uppercase tracking-widest text-muted-foreground block">Turn</span>
+            <span className="font-mono text-xl font-bold">{state.turn}</span>
+          </div>
+          <div className="text-center">
+            <span className="text-[10px] uppercase tracking-widest text-muted-foreground block">Era</span>
+            <span className="font-serif text-lg text-foreground">{state.era}</span>
+          </div>
+          <div className="text-center border-l border-white/10 pl-8">
+            <span className="text-[10px] uppercase tracking-widest text-muted-foreground block">Leader</span>
+            <span className="font-serif text-lg text-foreground flex items-center gap-2">
+              <User className="w-4 h-4 text-primary" />
+              {state.leader}
+            </span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-primary hover:bg-primary/10">
+            <Settings className="w-5 h-5" />
+          </Button>
+          <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-primary hover:bg-primary/10">
+            <Menu className="w-5 h-5" />
+          </Button>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <main className="flex-1 p-6 grid grid-cols-12 gap-6 overflow-hidden h-[calc(100vh-4rem)]">
+        
+        {/* Left Column: Stats & Actions */}
+        <div className="col-span-3 flex flex-col gap-6 h-full overflow-y-auto custom-scrollbar pb-20">
+          {/* Yields Grid */}
+          <div className="grid grid-cols-1 gap-3">
+            <StatCard label="Science" value={`+${state.yields.science}`} icon={Beaker} colorClass="text-science" />
+            <StatCard label="Culture" value={`+${state.yields.culture}`} icon={Music} colorClass="text-culture" />
+            <StatCard label="Faith" value={`+${state.yields.faith}`} icon={Anchor} colorClass="text-faith" />
+            <StatCard label="Gold" value={`+${state.yields.gold}`} icon={Coins} colorClass="text-gold" />
+            <StatCard label="Production" value={state.yields.production} icon={Hammer} colorClass="text-prod" />
+            <StatCard label="Food" value={state.yields.food} icon={Wheat} colorClass="text-food" />
+          </div>
+        </div>
+
+        {/* Center Column: Analysis View */}
+        <div className="col-span-6 h-full flex flex-col gap-6">
+          <AnalysisPanel alerts={state.alerts || []} />
+          
+          {/* Current Progress Cards */}
+          <div className="grid grid-cols-2 gap-6 h-1/3">
+            <div className="glass-panel p-5 rounded-lg flex flex-col justify-between border-t-2 border-t-science/50">
+              <div className="flex justify-between items-start">
+                <div>
+                  <span className="text-xs font-bold tracking-widest text-science uppercase">Researching</span>
+                  <h3 className="font-serif text-xl mt-1">{state.currentResearch.name}</h3>
+                </div>
+                <Beaker className="text-science opacity-50" />
+              </div>
+              <div className="space-y-2">
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>{state.currentResearch.turnsLeft} Turns Left</span>
+                  <span>{state.currentResearch.progress}%</span>
+                </div>
+                <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
+                  <div className="h-full bg-science" style={{ width: `${state.currentResearch.progress}%` }} />
+                </div>
+              </div>
+            </div>
+
+            <div className="glass-panel p-5 rounded-lg flex flex-col justify-between border-t-2 border-t-culture/50">
+              <div className="flex justify-between items-start">
+                <div>
+                  <span className="text-xs font-bold tracking-widest text-culture uppercase">Civic</span>
+                  <h3 className="font-serif text-xl mt-1">{state.currentCivic.name}</h3>
+                </div>
+                <Music className="text-culture opacity-50" />
+              </div>
+              <div className="space-y-2">
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>{state.currentCivic.turnsLeft} Turns Left</span>
+                  <span>{state.currentCivic.progress}%</span>
+                </div>
+                <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
+                  <div className="h-full bg-culture" style={{ width: `${state.currentCivic.progress}%` }} />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column: Recommendations */}
+        <div className="col-span-3 h-full pb-6 overflow-hidden">
+          <ActionList recommendations={state.recommendations || []} />
+        </div>
+      </main>
+    </div>
+  );
+}
+

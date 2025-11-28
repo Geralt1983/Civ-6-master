@@ -1,4 +1,3 @@
-
 export interface Yields {
   science: number;
   culture: number;
@@ -9,6 +8,7 @@ export interface Yields {
 }
 
 export interface GameState {
+  gameSpeed?: string;
   turn: number;
   era: string;
   leader: string;
@@ -17,21 +17,21 @@ export interface GameState {
     name: string;
     turnsLeft: number;
     progress: number;
-    icon: string;
+    icon?: string;
   };
   currentCivic: {
     name: string;
     turnsLeft: number;
     progress: number;
-    icon: string;
+    icon?: string;
   };
-  alerts: Array<{
+  alerts?: Array<{
     id: number;
     type: 'danger' | 'opportunity' | 'info';
     message: string;
     details: string;
   }>;
-  recommendations: Array<{
+  recommendations?: Array<{
     id: number;
     category: 'city' | 'unit' | 'tech' | 'civic';
     title: string;
