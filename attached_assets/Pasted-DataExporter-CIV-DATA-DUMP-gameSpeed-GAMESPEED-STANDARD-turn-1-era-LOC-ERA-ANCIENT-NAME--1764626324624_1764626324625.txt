@@ -1,0 +1,18 @@
+DataExporter: CIV_DATA_DUMP::{'gameSpeed':'GAMESPEED_STANDARD','turn':1,'era':'LOC_ERA_ANCIENT_NAME','leader':'LOC_LEADER_BASIL_NAME','yields':{'science':0,'culture':0,'faith':0,'gold':10,'production':0,'food':0},'currentResearch':{'name':'None','progress':0,'turnsLeft':0},'currentCivic':{'name':'LOC_CIVIC_CODE_OF_LAWS_NAME','progress':0,'turnsLeft':0}}
+PlotInfo: PlotInfo::OnCitySelectionChanged	0	65536	63	17	0	true	false
+DataExporter: CIV_DATA_DUMP::{'gameSpeed':'GAMESPEED_STANDARD','turn':2,'era':'LOC_ERA_ANCIENT_NAME','leader':'LOC_LEADER_BASIL_NAME','yields':{'science':2,'culture':1,'faith':0,'gold':10,'production':5,'food':3},'currentResearch':{'name':'LOC_TECH_MINING_NAME','progress':0,'turnsLeft':13},'currentCivic':{'name':'LOC_CIVIC_CODE_OF_LAWS_NAME','progress':0,'turnsLeft':0}}
+PlotInfo: PlotInfo::OnCitySelectionChanged	0	65536	0	0	0	false	false
+DataExporter: CIV_DATA_DUMP::{'gameSpeed':'GAMESPEED_STANDARD','turn':3,'era':'LOC_ERA_ANCIENT_NAME','leader':'LOC_LEADER_BASIL_NAME','yields':{'science':2,'culture':1,'faith':0,'gold':16,'production':5,'food':3},'currentResearch':{'name':'LOC_TECH_MINING_NAME','progress':10,'turnsLeft':12},'currentCivic':{'name':'LOC_CIVIC_CODE_OF_LAWS_NAME','progress':0,'turnsLeft':0}}
+DataExporter: CIV_DATA_DUMP::{'gameSpeed':'GAMESPEED_STANDARD','turn':4,'era':'LOC_ERA_ANCIENT_NAME','leader':'LOC_LEADER_BASIL_NAME','yields':{'science':2,'culture':1,'faith':0,'gold':22,'production':5,'food':3},'currentResearch':{'name':'LOC_TECH_MINING_NAME','progress':20,'turnsLeft':10},'currentCivic':{'name':'LOC_CIVIC_CODE_OF_LAWS_NAME','progress':0,'turnsLeft':0}}
+MapLabelManager: ATLANTIC OCEAN (1285.712890625, 178.85189819336)
+MapLabelManager: ATLANTIC OCEAN (754.12316894531, -1113.1042480469)
+MapLabelManager: ATLANTIC OCEAN (686.40295410156, 181.53959655762)
+MapLabelManager: ATLANTIC OCEAN (-1002.8248901367, 980.58270263672)
+MapLabelManager: ATLANTIC OCEAN (-481.63723754883, 330.92373657227)
+MapLabelManager: ATLANTIC OCEAN (-592.21887207031, 922.84454345703)
+MapLabelManager: ATLANTIC OCEAN (-258.43267822266, -1143.1938476563)
+MapLabelManager: ATLANTIC OCEAN (-133.0008392334, -193.93197631836)
+MapLabelManager: ATLANTIC OCEAN (244.25743103027, -716.20355224609)
+MapLabelManager: ATLANTIC OCEAN (-127.26837158203, 924.02752685547)
+MapLabelManager: ATLANTIC OCEAN (144.12426757813, 380.90252685547)
+DataExporter: CIV_DATA_DUMP::{'gameSpeed':'GAMESPEED_STANDARD','turn':5,'era':'LOC_ERA_ANCIENT_NAME','leader':'LOC_LEADER_BASIL_NAME','yields':{'science':2,'culture':2,'faith':0,'gold':28,'production':5,'food':3},'currentResearch':{'name':'LOC_TECH_MINING_NAME','progress':30,'turnsLeft':9},'currentCivic':{'name':'LOC_CIVIC_CODE_OF_LAWS_NAME','progress':0,'turnsLeft':0}}
