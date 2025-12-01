@@ -17,11 +17,16 @@ export default function Dashboard() {
   const { data: serverState, isLoading } = useQuery<GameState | null>({
     queryKey: ["gamestate"],
     queryFn: async () => {
-      const res = await fetch("/api/gamestate");
-      if (!res.ok) return null;
+      const res = await fetch("/api/gamestate", {
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache" }
+      });
+      if (res.status === 404) return null;
+      if (!res.ok) throw new Error("Failed to fetch game state");
       return res.json();
     },
-    refetchInterval: 5000,
+    refetchInterval: 3000,
+    staleTime: 1000,
   });
 
   useEffect(() => {
