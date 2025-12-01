@@ -28,13 +28,13 @@ export const gameStates = pgTable("game_states", {
     progress: number;
     icon: string;
   }>(),
-  alerts: jsonb("alerts").notNull().$type<Array<{
+  alerts: jsonb("alerts").$type<Array<{
     id: number;
     type: 'danger' | 'opportunity' | 'info';
     message: string;
     details: string;
   }>>(),
-  recommendations: jsonb("recommendations").notNull().$type<Array<{
+  recommendations: jsonb("recommendations").$type<Array<{
     id: number;
     category: 'city' | 'unit' | 'tech' | 'civic';
     title: string;
