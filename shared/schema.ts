@@ -20,13 +20,13 @@ export const gameStates = pgTable("game_states", {
     name: string;
     turnsLeft: number;
     progress: number;
-    icon: string;
+    icon?: string;
   }>(),
   currentCivic: jsonb("current_civic").$type<{
     name: string;
     turnsLeft: number;
     progress: number;
-    icon: string;
+    icon?: string;
   }>(),
   alerts: jsonb("alerts").$type<Array<{
     id: number;
