@@ -1,0 +1,143 @@
+DebugHotloadCache: GameDebug initialized!
+Test: Test.LUA loaded!
+JoiningRoom: OnFinishedGameplayContentConfigure() g_waitingForContentConfigure=true
+JoiningRoom: OnFinishedGameplayContentConfigure() g_waitingForContentConfigure=true
+JoiningRoom: OnFinishedGameplayContentConfigure() g_waitingForContentConfigure=true
+Mods: Failed to create mods browser search context!
+JoiningRoom: OnFinishedGameplayContentConfigure() g_waitingForContentConfigure=true
+JoiningRoom: OnFinishedGameplayContentConfigure() g_waitingForContentConfigure=true
+Lobby: OnChangeMPLobbyMode: PLAYBYCLOUD
+JoiningRoom: OnFinishedGameplayContentConfigure() g_waitingForContentConfigure=true
+JoiningRoom: OnFinishedGameplayContentConfigure() g_waitingForContentConfigure=true
+JoiningRoom: CheckTransitionToStagingRoom()
+JoiningRoom: OnJoinGameComplete()
+JoiningRoom: CheckTransitionToStagingRoom()
+HostGame: Building Game Setup
+HostGame: Hiding Game Setup
+StagingRoom: Building Game Setup
+StagingRoom: Starting Countdown Type Launch_Instant
+StagingRoom: Stopping Countdown. m_countdownType=Launch_Instant
+LoadScreen: true
+LoadScreen: false
+LoadScreen: false
+LoadScreen: true
+LoadScreen: true
+WorldCongress: Initializing World Congress Lua
+MapLabelManager: TETHYS OCEAN (1.6738824810298e+34, 1.6859223144699e+34)
+MapLabelManager: TETHYS OCEAN (3.9573449589163e+34, 3.9687832772913e+34)
+MapLabelManager: TETHYS OCEAN (4.5661675840569e+34, 4.5776056548439e+34)
+MapLabelManager: TETHYS OCEAN (2.4352892626226e+34, 2.4517137558879e+34)
+MapLabelManager: RHEIC OCEAN (2.5538259827923e+34, 2.5687159255849e+34)
+MapLabelManager: RHEIC OCEAN (7.5627315987568e+21, 3.2262953936543e+31)
+MapLabelManager: RHEIC OCEAN (6.0882231565566e+33, 6.2671352027943e+33)
+MapLabelManager: RHEIC OCEAN (9.1323344253499e+33, 9.1528650419314e+33)
+MapLabelManager: RHEIC OCEAN (1.2176446313113e+34, 1.2191109712878e+34)
+MapLabelManager: RHEIC OCEAN (1.2176446313113e+34, 1.2375888356962e+34)
+MapLabelManager: PACIFIC OCEAN (7.6056678975859e+34, 7.6042625880533e+34)
+MapLabelManager: PACIFIC OCEAN (5.7838118439862e+34, 5.7832245652316e+34)
+MapLabelManager: ATLANTIC OCEAN (1.1570003503904e+35, 1.1575774285191e+35)
+MapLabelManager: ATLANTIC OCEAN (1.1567623687972e+35, 1.1575248408262e+35)
+MapLabelManager: ATLANTIC OCEAN (9.1323351681139e+34, 9.1425991765676e+34)
+MapLabelManager: ATLANTIC OCEAN (1.2785268443078e+35, 1.2789960731003e+35)
+MapLabelManager: ATLANTIC OCEAN (1.3698501761819e+35, 1.3703487193945e+35)
+MapLabelManager: ATLANTIC OCEAN (7.3058675402799e+34, 7.3131996115446e+34)
+MapLabelManager: ATLANTIC OCEAN (8.2191013541969e+34, 8.228779074248e+34)
+MapLabelManager: ATLANTIC OCEAN (1.2480857006713e+35, 1.2484962015884e+35)
+MapLabelManager: ATLANTIC OCEAN (9.7411570504905e+34, 9.7499553379377e+34)
+MapLabelManager: ANTARCTIC OCEAN (1.4260938526099e+35, 1.426694501117e+35)
+MapLabelManager: ANTARCTIC OCEAN (1.4002913198183e+35, 1.3999685640913e+35)
+MapLabelManager: ANTARCTIC OCEAN (1.4916146516924e+35, 1.4930517515252e+35)
+MapLabelManager: ANTARCTIC OCEAN (1.5829379835665e+35, 1.5840817411276e+35)
+MapLabelManager: ANTARCTIC OCEAN (1.2785268443078e+35, 1.2783800741367e+35)
+MapPinManager: DMT_MapPinManager Loading mappinmanager.lua as base file
+MapSearchPanel: Created SearchContext 'MapSearch_Primary'
+MapSearchPanel: Created SearchContext 'MapSearch_Suggestions'
+ReportsList: Loading ReportsListLoader.lua from ReportsList Loader 1.1
+ReportsList: OK loaded ReportsListLoader.lua from ReportsList Loader
+ReportScreen: Loading ReportScreen.lua from Better Report Screen version 7.0
+ReportScreen: Rise & Fall    :	YES
+ReportScreen: Gathering Storm:	YES
+ReportScreen: Monopolies     :	no
+ReportScreen: BRS: Loaded file BRSPage_Yields.lua
+ReportScreen: BRS: Loaded file BRSPage_Resources.lua
+ReportScreen: BRS: Loaded file BRSPage_Gossip.lua
+ReportScreen: BRS: Loaded file BRSPage_CityStatus.lua
+ReportScreen: BRS: Loaded file BRSPage_Units.lua
+ReportScreen: BRS: Loaded file BRSPage_Deals.lua
+ReportScreen: BRS: Loaded file BRSPage_Policy.lua
+ReportScreen: BRS: Loaded file BRSPage_Minor.lua
+ReportScreen: BRS: Loaded file BRSPage_Cities2.lua
+ReportScreen: OK loaded ReportScreen.lua from Better Report Screen
+MapPinPopup: initializing MapTacks.IconOptions(1)
+MapPinPopup: Selected 14 columns
+MapPinPopup: DMT_MapPinPopup Loading mappinpopup.lua as base file
+DiplomacyActionView: QD_DiplomacyActionView loading DiplomacyActionView_Expansion2.lua as base file
+InGame: Loading InGame UI - F:/SteamLibrary/steamapps/workshop/content/289070/2428969051/ui/dmt_yieldcalculator
+dmt_yieldcalculator: Loading DMT_YieldCalculator.lua
+dmt_yieldcalculator: Loading DMT_ModifierCalculator.lua
+dmt_yieldcalculator: Loading DMT_ModifierRequirementChecker.lua
+InGame: Loading InGame UI - F:/SteamLibrary/steamapps/workshop/content/289070/2460661464/ui/qd_dealpopup
+InGame: Loading InGame UI - F:/SteamLibrary/steamapps/workshop/content/289070/2460661464/ui/qd_launchbutton
+InGame: Loading InGame UI - F:/SteamLibrary/steamapps/workshop/content/289070/2460661464/ui/qd_offerautomator
+InGame: Loading InGame UI - F:/SteamLibrary/steamapps/workshop/content/289070/2460661464/ui/qd_popuptab_exchange
+InGame: Loading InGame UI - F:/SteamLibrary/steamapps/workshop/content/289070/2460661464/ui/qd_popuptab_purchase
+InGame: Loading InGame UI - F:/SteamLibrary/steamapps/workshop/content/289070/2460661464/ui/qd_popuptab_sale
+InGame: Loading InGame UI - F:/SteamLibrary/steamapps/workshop/content/289070/1312585482/RealModifierAnalysis
+RealModifierAnalysis: Loading Real Modifier Analysis.lua from Better Report Screen version 7.0
+RealModifierAnalysis: OK loaded Real Modifier Analysis.lua from Better Report Screen
+InGame: Loading InGame UI - ../../../DLC/Expansion2/UI/Additions/DedicationPopup
+InGame: Loading InGame UI - ../../../DLC/Expansion2/UI/Additions/DisloyalCityChooser
+InGame: Loading InGame UI - ../../../DLC/Expansion2/UI/Additions/EraProgressPanel
+InGame: Loading InGame UI - ../../../DLC/Expansion2/UI/Additions/EraReviewPopup
+InGame: Loading InGame UI - ../../../DLC/Expansion2/UI/Additions/ExpansionIntro
+InGame: Loading InGame UI - ../../../DLC/Expansion2/UI/Additions/GovernorAssignmentChooser
+InGame: Loading InGame UI - ../../../DLC/Expansion2/UI/Additions/GovernorPanel
+InGame: Loading InGame UI - ../../../DLC/Expansion2/UI/Additions/HistoricMoments
+InGame: Loading InGame UI - ../../../DLC/Expansion2/UI/Additions/WorldCrisisPopup
+TutorialUIRoot: Tutorial: Firaxis in game tutorial prompts.
+TutorialUIRoot: Version: 1
+TutorialUIRoot: Loading bank of items for tutorial scenario: 'BASE'
+MapLabelManager: TETHYS OCEAN (-1014.2286987305, -1370.3792724609)
+MapLabelManager: TETHYS OCEAN (948.28686523438, -1256.7858886719)
+MapLabelManager: TETHYS OCEAN (-341.95849609375, -1261.7352294922)
+MapLabelManager: TETHYS OCEAN (409.96826171875, -994.6865234375)
+MapLabelManager: RHEIC OCEAN (2842.9997558594, -1245.1319580078)
+MapLabelManager: RHEIC OCEAN (2154.6643066406, -1212.0086669922)
+MapLabelManager: RHEIC OCEAN (-1873.5087890625, -1341.9858398438)
+MapLabelManager: RHEIC OCEAN (1552.873046875, -1286.7133789063)
+MapLabelManager: RHEIC OCEAN (2173.8840332031, -526.73687744141)
+MapLabelManager: RHEIC OCEAN (1641.9836425781, -623.91302490234)
+MapLabelManager: PACIFIC OCEAN (-2331.6586914063, -291.52224731445)
+MapLabelManager: PACIFIC OCEAN (-2066.9450683594, 52.775577545166)
+MapLabelManager: ATLANTIC OCEAN (-416.69583129883, 689.66827392578)
+MapLabelManager: ATLANTIC OCEAN (-66.951164245605, -278.31958007813)
+MapLabelManager: ATLANTIC OCEAN (397.75399780273, -92.303276062012)
+MapLabelManager: ATLANTIC OCEAN (90.87572479248, 1190.9748535156)
+MapLabelManager: ATLANTIC OCEAN (117.98204803467, 496.86157226563)
+MapLabelManager: ATLANTIC OCEAN (881.15124511719, 1312.0842285156)
+MapLabelManager: ATLANTIC OCEAN (-536.82836914063, -7.7916598320007)
+MapLabelManager: ATLANTIC OCEAN (-1236.2847900391, 1096.1843261719)
+MapLabelManager: ATLANTIC OCEAN (-637.13067626953, 1213.3170166016)
+MapLabelManager: ANTARCTIC OCEAN (2236.2111816406, 1142.7457275391)
+MapLabelManager: ANTARCTIC OCEAN (-1789.4396972656, 1217.509765625)
+MapLabelManager: ANTARCTIC OCEAN (-2770.4260253906, 711.16851806641)
+MapLabelManager: ANTARCTIC OCEAN (-2441.9655761719, 1177.1940917969)
+MapLabelManager: ANTARCTIC OCEAN (1613.3142089844, 1296.3757324219)
+LoadScreen: OnLoadGameViewStateDone
+PlotInfo: PlotInfo::OnCitySelectionChanged	1	65536	15	12	0	true	false
+PlotInfo: PlotInfo::OnCitySelectionChanged	1	65536	0	0	0	false	false
+PlotInfo: PlotInfo::OnCitySelectionChanged	1	131073	18	14	0	true	false
+PlotInfo: PlotInfo::OnCitySelectionChanged	1	131073	0	0	0	false	false
+MapLabelManager: ATLANTIC OCEAN (-416.69583129883, 689.66827392578)
+MapLabelManager: ATLANTIC OCEAN (-66.951164245605, -278.31958007813)
+MapLabelManager: ATLANTIC OCEAN (397.75399780273, -92.303276062012)
+MapLabelManager: ATLANTIC OCEAN (90.87572479248, 1190.9748535156)
+MapLabelManager: ATLANTIC OCEAN (117.98204803467, 496.86157226563)
+MapLabelManager: ATLANTIC OCEAN (881.15124511719, 1312.0842285156)
+MapLabelManager: ATLANTIC OCEAN (-536.82836914063, -7.7916598320007)
+MapLabelManager: ATLANTIC OCEAN (-1236.2847900391, 1096.1843261719)
+MapLabelManager: ATLANTIC OCEAN (-637.13067626953, 1213.3170166016)
+Mods: Failed to create mods browser search context!
+Test: Test.LUA loaded!
+JoiningRoom: OnFinishedGameplayContentConfigure() g_waitingForContentConfigure=true
+JoiningRoom: OnFinishedGameplayContentConfigure() g_waitingForContentConfigure=true
