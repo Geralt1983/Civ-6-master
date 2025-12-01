@@ -1,0 +1,214 @@
+DebugHotloadCache: GameDebug initialized!
+Test: Test.LUA loaded!
+JoiningRoom: OnFinishedGameplayContentConfigure() g_waitingForContentConfigure=true
+AdvancedSetup: There are 6 participating players.
+AdvancedSetup: Building Game Setup
+AdvancedSetup: Player Count Changed
+AdvancedSetup: There are 6 participating players.
+AdvancedSetup: Player Count Changed
+AdvancedSetup: There are 6 participating players.
+JoiningRoom: OnFinishedGameplayContentConfigure() g_waitingForContentConfigure=true
+JoiningRoom: OnFinishedGameplayContentConfigure() g_waitingForContentConfigure=true
+AdvancedSetup: Hiding Game Setup
+LoadScreen: true
+LoadScreen: true
+LoadScreen: false
+LoadScreen: true
+GenerateRandomMap: Map Seed = -1069650996
+Map Script: Generating Continents Map
+Map Script: Generating Plot Types
+Map Script: Existing Ratio	28.365853658537
+Map Script: New Mountains 	27
+Map Script: Mountain Set	28
+Map Script: Generating Terrain Types
+Map Script: -
+Map Script: - Desert Percentage:	25
+Map Script: --- Latitude Readout ---
+Map Script: - All Grass End Latitude:	0.1
+Map Script: - Desert Start Latitude:	0.2
+Map Script: - Desert End Latitude:	0.5
+Map Script: - Tundra Start Latitude:	0.65
+Map Script: - Snow Start Latitude:	0.8
+Map Script: - - - - - - - - - - - - - -
+Map Script: Expanding coasts
+Map Script: After Adding Hills: 	565
+Map Script: Desired Volcanoes: 4.652
+Map Script: Continent Boundary Plots: 90
+Map Script: Boundary Plots Per Volcano: 29.019776440241
+Map Script: Volcano Placed at (x, y): 6, 25
+Map Script: Volcano Placed at (x, y): 10, 26
+Map Script: Volcano Placed at (x, y): 16, 24
+Map Script: Continent Edge Volcanoes Placed: 3
+Map Script: Volcano Placed at (x, y): 30, 14
+Map Script: Volcano Placed at (x, y): 59, 40
+Map Script: Total Volcanoes Placed: 5
+Map Script: Map Generation - Adding Rivers
+Map Script: Map Generation - Adding Lakes
+Map Script: 7 lakes added
+Map Script: Adding Features
+Map Script: Permanent Ice Tiles: 76.59
+Map Script: iPhaseIndex: 7, iIceTilesToAdd: 76.59, RandomEventEnum: 30
+Map Script: iPhaseIndex: 6, iIceTilesToAdd: 76.59, RandomEventEnum: 29
+Map Script: iPhaseIndex: 5, iIceTilesToAdd: 76.59, RandomEventEnum: 28
+Map Script: iPhaseIndex: 4, iIceTilesToAdd: 51.06, RandomEventEnum: 27
+Map Script: iPhaseIndex: 3, iIceTilesToAdd: 51.06, RandomEventEnum: 26
+Map Script: iPhaseIndex: 2, iIceTilesToAdd: 51.06, RandomEventEnum: 25
+Map Script: iPhaseIndex: 1, iIceTilesToAdd: 51.06, RandomEventEnum: 24
+Map Script: Number of Tiles: 	957
+Map Script: Number of Forests: 	170
+Map Script: Percent Forests: 	17.763845350052
+Map Script: Number of Jungles: 	96
+Map Script: Percent Jungles: 	10.031347962382
+Map Script: Percent of Junglable: 	40.167364016736
+Map Script: Number of Marshes: 	28
+Map Script: Adding cliffs
+Map Script: In NaturalWonderGenerator.Create()
+Map Script:     Placing 4 Natural Wonders
+Map Script: Feature Type: 6, Valid Hexes: 48
+Map Script: Feature Type: 7, Valid Hexes: 2
+Map Script: Feature Type: 8, Valid Hexes: 62
+Map Script: Feature Type: 9, Valid Hexes: 2
+Map Script: Feature Type: 10, Valid Hexes: 0
+Map Script: Feature Type: 11, Valid Hexes: 32
+Map Script: Feature Type: 12, Valid Hexes: 3
+Map Script: Feature Type: 13, Valid Hexes: 27
+Map Script: Feature Type: 14, Valid Hexes: 2
+Map Script: Feature Type: 15, Valid Hexes: 33
+Map Script: Feature Type: 16, Valid Hexes: 98
+Map Script: Feature Type: 17, Valid Hexes: 13
+Map Script: Feature Type: 18, Valid Hexes: 69
+Map Script: Feature Type: 19, Valid Hexes: 9
+Map Script: Feature Type: 20, Valid Hexes: 1
+Map Script: Feature Type: 21, Valid Hexes: 72
+Map Script: Feature Type: 22, Valid Hexes: 1
+Map Script: Feature Type: 23, Valid Hexes: 11
+Map Script: Feature Type: 24, Valid Hexes: 7
+Map Script: Feature Type: 25, Valid Hexes: 70
+Map Script: Feature Type: 26, Valid Hexes: 8
+Map Script: Feature Type: 27, Valid Hexes: 31
+Map Script: Feature Type: 28, Valid Hexes: 4
+Map Script: Feature Type: 29, Valid Hexes: 0
+Map Script: Feature Type: 36, Valid Hexes: 44
+Map Script: Feature Type: 37, Valid Hexes: 138
+Map Script: Feature Type: 38, Valid Hexes: 36
+Map Script: Feature Type: 39, Valid Hexes: 22
+Map Script: Feature Type: 40, Valid Hexes: 103
+Map Script: Feature Type: 41, Valid Hexes: 13
+Map Script: Feature Type: 42, Valid Hexes: 2
+Map Script: Feature Type: 43, Valid Hexes: 81
+Map Script: Feature Type: 44, Valid Hexes: 120
+Map Script: Feature Type: 45, Valid Hexes: 21
+Map Script: Num wonders with valid location: 32
+Map Script:  Selected Wonder = 10, Random Score = 	96
+Map Script:  Set Wonder with Feature ID of 16 at location (14, 36)
+Map Script:  Selected Wonder = 12, Random Score = 	94
+Map Script:  Set Wonder with Feature ID of 18 at location (64, 20)
+Map Script:  Selected Wonder = 8, Random Score = 	91
+Map Script:  Set Wonder with Feature ID of 14 at location (7, 29)
+Map Script:  Selected Wonder = 9, Random Score = 	89
+Map Script:  Set Wonder with Feature ID of 15 at location (31, 12)
+Map Script: Adding Features from Continents
+Map Script: Fissure Placed at (x, y): 13, 21
+Map Script: Fissure Placed at (x, y): 18, 21
+Map Script: Fissure Placed at (x, y): 14, 20
+Map Script: Fissure Placed at (x, y): 17, 20
+Map Script: Fissure Placed at (x, y): 17, 21
+Map Script: Number of Oasis: 	1
+Map Script: Number of Fissures: 	5
+Map Script: Map Generation - Marking Coastal Lowlands
+Map Script: 100 Coastal Lowland tiles added
+Map Script:   4510077516370f eligible coastal tiles
+Map Script: In ResourceGenerator.Create()
+Map Script:     Placing resources
+Map Script: Creating start plot database.
+Map Script: Major Start X: 	29	Major Start Y: 	15
+Map Script: Major Start X: 	61	Major Start Y: 	30
+Map Script: Major Start X: 	11	Major Start Y: 	11
+Map Script: Major Start X: 	18	Major Start Y: 	21
+Map Script: Major Start X: 	7	Major Start Y: 	26
+Map Script: Major Start X: 	59	Major Start Y: 	17
+Map Script: Minor Start X: 	13	Minor Start Y: 	27
+Map Script: Minor Start X: 	22	Minor Start Y: 	11
+Map Script: Minor Start X: 	41	Minor Start Y: 	32
+Map Script: Minor Start X: 	29	Minor Start Y: 	22
+Map Script: Minor Start X: 	50	Minor Start Y: 	35
+Map Script: Minor Start X: 	59	Minor Start Y: 	10
+Map Script: Minor Start X: 	70	Minor Start Y: 	13
+Map Script: Minor Start X: 	7	Minor Start Y: 	18
+Map Script: Minor Start X: 	57	Minor Start Y: 	38
+Map Script: -------------------------------
+Map Script: Map Generation - Adding Goodies
+Map Script: -------------------------------
+WorldCongress: Initializing World Congress Lua
+MapLabelManager: INDIAN OCEAN (-nan(ind), -nan(ind))
+MapPinManager: DMT_MapPinManager Loading mappinmanager.lua as base file
+MapSearchPanel: Created SearchContext 'MapSearch_Primary'
+MapSearchPanel: Created SearchContext 'MapSearch_Suggestions'
+ReportsList: Loading ReportsListLoader.lua from ReportsList Loader 1.1
+ReportsList: OK loaded ReportsListLoader.lua from ReportsList Loader
+ReportScreen: Loading ReportScreen.lua from Better Report Screen version 7.0
+ReportScreen: Rise & Fall    :	YES
+ReportScreen: Gathering Storm:	YES
+ReportScreen: Monopolies     :	no
+ReportScreen: BRS: Loaded file BRSPage_Yields.lua
+ReportScreen: BRS: Loaded file BRSPage_Resources.lua
+ReportScreen: BRS: Loaded file BRSPage_Gossip.lua
+ReportScreen: BRS: Loaded file BRSPage_CityStatus.lua
+ReportScreen: BRS: Loaded file BRSPage_Units.lua
+ReportScreen: BRS: Loaded file BRSPage_Deals.lua
+ReportScreen: BRS: Loaded file BRSPage_Policy.lua
+ReportScreen: BRS: Loaded file BRSPage_Minor.lua
+ReportScreen: BRS: Loaded file BRSPage_Cities2.lua
+ReportScreen: OK loaded ReportScreen.lua from Better Report Screen
+MapPinPopup: initializing MapTacks.IconOptions(0)
+MapPinPopup: Selected 14 columns
+MapPinPopup: DMT_MapPinPopup Loading mappinpopup.lua as base file
+DiplomacyActionView: QD_DiplomacyActionView loading DiplomacyActionView_Expansion2.lua as base file
+InGame: Loading InGame UI - F:/SteamLibrary/steamapps/workshop/content/289070/2428969051/ui/dmt_yieldcalculator
+dmt_yieldcalculator: Loading DMT_YieldCalculator.lua
+dmt_yieldcalculator: Loading DMT_ModifierCalculator.lua
+dmt_yieldcalculator: Loading DMT_ModifierRequirementChecker.lua
+InGame: Loading InGame UI - F:/SteamLibrary/steamapps/workshop/content/289070/2460661464/ui/qd_dealpopup
+InGame: Loading InGame UI - F:/SteamLibrary/steamapps/workshop/content/289070/2460661464/ui/qd_launchbutton
+InGame: Loading InGame UI - F:/SteamLibrary/steamapps/workshop/content/289070/2460661464/ui/qd_offerautomator
+InGame: Loading InGame UI - F:/SteamLibrary/steamapps/workshop/content/289070/2460661464/ui/qd_popuptab_exchange
+InGame: Loading InGame UI - F:/SteamLibrary/steamapps/workshop/content/289070/2460661464/ui/qd_popuptab_purchase
+InGame: Loading InGame UI - F:/SteamLibrary/steamapps/workshop/content/289070/2460661464/ui/qd_popuptab_sale
+InGame: Loading InGame UI - F:/SteamLibrary/steamapps/workshop/content/289070/1312585482/RealModifierAnalysis
+RealModifierAnalysis: Loading Real Modifier Analysis.lua from Better Report Screen version 7.0
+RealModifierAnalysis: OK loaded Real Modifier Analysis.lua from Better Report Screen
+InGame: Loading InGame UI - ../../../DLC/Expansion2/UI/Additions/DedicationPopup
+InGame: Loading InGame UI - ../../../DLC/Expansion2/UI/Additions/DisloyalCityChooser
+InGame: Loading InGame UI - ../../../DLC/Expansion2/UI/Additions/EraProgressPanel
+InGame: Loading InGame UI - ../../../DLC/Expansion2/UI/Additions/EraReviewPopup
+InGame: Loading InGame UI - ../../../DLC/Expansion2/UI/Additions/ExpansionIntro
+InGame: Loading InGame UI - ../../../DLC/Expansion2/UI/Additions/GovernorAssignmentChooser
+InGame: Loading InGame UI - ../../../DLC/Expansion2/UI/Additions/GovernorPanel
+InGame: Loading InGame UI - ../../../DLC/Expansion2/UI/Additions/HistoricMoments
+InGame: Loading InGame UI - ../../../DLC/Expansion2/UI/Additions/WorldCrisisPopup
+TutorialUIRoot: Tutorial: Firaxis in game tutorial prompts.
+TutorialUIRoot: Version: 1
+TutorialUIRoot: Loading bank of items for tutorial scenario: 'BASE'
+MapLabelManager: INDIAN OCEAN (1875.109375, -1082.841796875)
+MapLabelManager: INDIAN OCEAN (-1294.7625732422, -1057.3967285156)
+MapLabelManager: INDIAN OCEAN (2318.6262207031, -934.99346923828)
+MapLabelManager: INDIAN OCEAN (1877.7303466797, 189.4104309082)
+MapLabelManager: INDIAN OCEAN (-1903.0668945313, -1105.2103271484)
+MapLabelManager: INDIAN OCEAN (-2037.3337402344, -584.06353759766)
+MapLabelManager: INDIAN OCEAN (-1948.0554199219, 1018.0797729492)
+MapLabelManager: INDIAN OCEAN (1929.2878417969, 964.48138427734)
+MapLabelManager: INDIAN OCEAN (2392.1025390625, -137.56785583496)
+MapLabelManager: INDIAN OCEAN (2475.7490234375, 521.61395263672)
+LoadScreen: OnLoadGameViewStateDone
+Runtime Error: C:\Users\jkimb.DESKTOP-K4VOM01\OneDrive\Documents\My Games\Sid Meier's Civilization VI\Mods\Civ6Companion\DataExporter.lua:95: function expected instead of nil
+stack traceback:
+	C:\Users\jkimb.DESKTOP-K4VOM01\OneDrive\Documents\My Games\Sid Meier's Civilization VI\Mods\Civ6Companion\DataExporter.lua:95: in function 'OnTurnBegin'
+	[C]: in function 'func'
+	[C]: in function '(anonymous)'
+PlotInfo: PlotInfo::OnCitySelectionChanged	0	65536	29	15	0	true	false
+Runtime Error: C:\Users\jkimb.DESKTOP-K4VOM01\OneDrive\Documents\My Games\Sid Meier's Civilization VI\Mods\Civ6Companion\DataExporter.lua:95: function expected instead of nil
+stack traceback:
+	C:\Users\jkimb.DESKTOP-K4VOM01\OneDrive\Documents\My Games\Sid Meier's Civilization VI\Mods\Civ6Companion\DataExporter.lua:95: in function 'OnTurnBegin'
+	[C]: in function 'func'
+	[C]: in function '(anonymous)'
+PlotInfo: PlotInfo::OnCitySelectionChanged	0	65536	0	0	0	false	false
