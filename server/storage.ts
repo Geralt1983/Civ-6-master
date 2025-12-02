@@ -9,7 +9,7 @@ export interface IStorage {
 
 export class DatabaseStorage implements IStorage {
   async upsertGameState(state: InsertGameState): Promise<GameState> {
-    const [result] = await db.insert(gameStates).values(state).returning();
+    const [result] = await db.insert(gameStates).values([state]).returning();
     return result;
   }
 
