@@ -1,18 +1,21 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { GameState, mockGameState } from "@/lib/mockData";
 import { StatCard } from "@/components/civ/StatCard";
 import { ActionList } from "@/components/civ/ActionList";
 import { AnalysisPanel } from "@/components/civ/AnalysisPanel";
-import { Beaker, Music, Anchor, Coins, Hammer, Wheat, Menu, Settings, User, Wifi, WifiOff } from "lucide-react";
+import { StrategosPanel, StrategosAdvice } from "@/components/civ/StrategosPanel";
+import { Beaker, Music, Anchor, Coins, Hammer, Wheat, Menu, Settings, User, Wifi, WifiOff, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { generateAdvice } from "@/lib/advisor";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import generatedImage from '@assets/generated_images/a_dark,_textured_hex_map_background_for_a_strategy_game_interface.png';
 
 export default function Dashboard() {
   const queryClient = useQueryClient();
   const wsRef = useRef<WebSocket | null>(null);
+  const [strategosAdvice, setStrategosAdvice] = useState<StrategosAdvice | null>(null);
+  const [strategosError, setStrategosError] = useState<string | null>(null);
 
   const { data: serverState, isLoading } = useQuery<GameState | null>({
     queryKey: ["gamestate"],
@@ -27,6 +30,28 @@ export default function Dashboard() {
     },
     refetchInterval: 3000,
     staleTime: 1000,
+  });
+
+  const askStrategosMutation = useMutation({
+    mutationFn: async (gameState: GameState) => {
+      const res = await fetch("/api/ask-strategos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(gameState)
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.error || "Failed to get AI advice");
+      }
+      return res.json() as Promise<StrategosAdvice>;
+    },
+    onSuccess: (data) => {
+      setStrategosAdvice(data);
+      setStrategosError(null);
+    },
+    onError: (error: Error) => {
+      setStrategosError(error.message);
+    }
   });
 
   useEffect(() => {
@@ -62,6 +87,11 @@ export default function Dashboard() {
   };
 
   const isConnected = !!serverState;
+
+  const handleAskStrategos = () => {
+    setStrategosError(null);
+    askStrategosMutation.mutate(state);
+  };
 
   return (
     <div className="min-h-screen w-full text-foreground flex flex-col bg-cover bg-center bg-no-repeat bg-fixed" 
@@ -121,6 +151,15 @@ export default function Dashboard() {
         </div>
 
         <div className="flex items-center gap-2">
+          <Button 
+            onClick={handleAskStrategos}
+            disabled={askStrategosMutation.isPending}
+            className="bg-primary/20 hover:bg-primary/30 border border-primary/50 text-primary"
+            data-testid="button-ask-strategos"
+          >
+            <Brain className="w-4 h-4 mr-2" />
+            {askStrategosMutation.isPending ? "Analyzing..." : "Ask Strategos"}
+          </Button>
           <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-primary hover:bg-primary/10" data-testid="button-settings">
             <Settings className="w-5 h-5" />
           </Button>
@@ -147,11 +186,20 @@ export default function Dashboard() {
         </div>
 
         {/* Center Column: Analysis View */}
-        <div className="col-span-6 h-full flex flex-col gap-6">
+        <div className="col-span-6 h-full flex flex-col gap-6 overflow-y-auto custom-scrollbar pb-6">
+          {/* Strategos AI Panel - Only show when we have advice or loading */}
+          {(strategosAdvice || askStrategosMutation.isPending || strategosError) && (
+            <StrategosPanel 
+              advice={strategosAdvice} 
+              isLoading={askStrategosMutation.isPending}
+              error={strategosError}
+            />
+          )}
+          
           <AnalysisPanel alerts={state.alerts || []} />
           
           {/* Current Progress Cards */}
-          <div className="grid grid-cols-2 gap-6 h-1/3">
+          <div className="grid grid-cols-2 gap-6">
             <div className="glass-panel p-5 rounded-lg flex flex-col justify-between border-t-2 border-t-science/50">
               <div className="flex justify-between items-start">
                 <div>
