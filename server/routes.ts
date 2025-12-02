@@ -28,9 +28,13 @@ export async function registerRoutes(
 
   // POST /api/gamestate - Receive game state from bridge
   app.post("/api/gamestate", async (req, res) => {
+    console.log("[POST /api/gamestate] Request received, body keys:", Object.keys(req.body));
     try {
+      console.log("[POST] Raw body:", JSON.stringify(req.body).substring(0, 200));
       const validatedData = insertGameStateSchema.parse(req.body);
+      console.log("[POST] Validation passed, saving to DB...");
       const savedState = await storage.upsertGameState(validatedData);
+      console.log("[POST] Saved! Turn:", savedState.turn);
       
       // Broadcast to all connected WebSocket clients
       wss.clients.forEach((client) => {
@@ -41,11 +45,13 @@ export async function registerRoutes(
       
       res.json(savedState);
     } catch (error: any) {
+      console.log("[POST] Error caught:", error.name);
       if (error.name === "ZodError") {
         const validationError = fromZodError(error);
+        console.error("[POST] Validation error:", validationError.message);
         return res.status(400).json({ error: validationError.message });
       }
-      console.error("Error saving game state:", error);
+      console.error("[POST] Unexpected error:", error.message);
       res.status(500).json({ error: "Failed to save game state" });
     }
   });
