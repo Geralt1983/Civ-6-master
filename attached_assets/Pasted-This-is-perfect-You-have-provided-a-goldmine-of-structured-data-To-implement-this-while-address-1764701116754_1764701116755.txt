@@ -1,0 +1,555 @@
+This is perfect. You have provided a goldmine of structured data.
+
+To implement this while addressing your request about **Game Speed**:
+
+**The Solution:**
+We will store all these values in the database as **"Online Speed" (Baseline)** values. Our `advisor.ts` engine (which we built in the previous step) **already has the math** to normalize your current game turn back to this baseline.
+
+  * *Example:* If you play on **Standard Speed** (2x slower) and are on **Turn 60**, the engine divides by 2, gets **30**, and checks the **"Turn 30"** benchmark from this file.
+
+Here is the fully updated `strategyDb.ts` containing the massive dataset you extracted.
+
+**Action:** Replace the entire contents of `client/src/lib/strategyDb.ts` with this code.
+
+```typescript
+// client/src/lib/strategyDb.ts
+
+// --- SECTION 1: TURN BENCHMARKS (Baseline: ONLINE SPEED) ---
+// The Advisor engine will automatically scale your current turn to match these numbers.
+export const BENCHMARKS = [
+  {
+    turn: 30,
+    metrics: { science: 15, culture: 40, production: 15 },
+    advice: "Turn 30 Goal: 5 cities settled (Standard) or 2-3 tall cities. You need Monuments built. Avoid Campuses unless you are a pure Science Civ."
+  },
+  {
+    turn: 45,
+    metrics: { science: 40, culture: 45, production: 25 },
+    advice: "Feudalism Check: You MUST have unlocked Feudalism by now for the Serfdom policy (+2 Builder Charges). Produce a wave of Builders now."
+  },
+  {
+    turn: 50,
+    metrics: { science: 100, culture: 100, production: 40 },
+    advice: "Mid-Game Transition: 8-10 cities settled. Universities and Workshops should be completing. Prepare for a Free Inquiry Golden Age if naval."
+  },
+  {
+    turn: 60,
+    metrics: { science: 200, culture: 150, production: 60 },
+    advice: "Golden Age Spike: You should be in a Golden Age (Free Inquiry or Monumentality). Your yields should be exploding."
+  },
+  {
+    turn: 70,
+    metrics: { science: 300, culture: 300, production: 100 },
+    advice: "Industrial Power: PRIORITIZE RESEARCH LABS (Chemistry). Complete 1 tech/turn. Unlock Tier 3 Governments (Fascism/Democracy)."
+  },
+  {
+    turn: 100,
+    metrics: { science: 1000, culture: 800, production: 200 },
+    advice: "Endgame: Launch Space Projects or finalize Tourism multipliers (Computers/Environmentalism). Field Modern Armor/Atomic armies."
+  }
+];
+
+// --- SECTION 2: OPENING BUILD ORDER ---
+export const OPENING_BUILD_ORDER = [
+  { turn: 1, item: "Scout", reason: "Standard opener for Era Score (2 scouts needed)." },
+  { turn: 5, item: "Scout", reason: "Find City States and Natural Wonders ASAP." },
+  { turn: 10, item: "Settler", reason: "Start expanding. Target 3-4 cities by Turn 30." },
+  { turn: 15, item: "Settler", reason: "Continue expansion. Pre-place districts to lock costs." },
+];
+
+// --- SECTION 3: GENERAL ADVICE RULES ---
+export const GENERAL_ADVICE = [
+  {
+    condition: (state: any) => state.turn < 30 && state.yields.science > state.yields.culture && state.currentResearch.name.includes("Writing"),
+    type: "city",
+    title: "Stop Building Campuses",
+    desc: "Unless you are Korea/Maya, Science scales poorly early. Prioritize Monuments and Culture to reach Feudalism."
+  },
+  {
+    condition: (state: any) => state.turn > 40 && !state.currentCivic?.name?.includes("Feudalism") && state.yields.culture < 45,
+    type: "civic",
+    title: "RUSH FEUDALISM",
+    desc: "You are missing the Serfdom power spike (5-charge Builders). Focus all efforts on Culture."
+  },
+  {
+    condition: (state: any) => state.turn > 55 && state.yields.science < 200,
+    type: "tech",
+    title: "Missed Medieval Spike",
+    desc: "You missed the Turn 60 benchmark (200 Science). If Naval, check Harbor adjacency + Free Inquiry. If Land, pillage to catch up."
+  },
+  {
+    condition: (state: any) => state.turn > 75 && !state.currentResearch?.name?.includes("Combustion") && !state.currentResearch?.name?.includes("Chemistry"),
+    type: "tech",
+    title: "Late Industrial Lag",
+    desc: "You need Chemistry (Labs) or Combustion (Tanks) immediately. Do not research filler techs."
+  }
+];
+
+// --- SECTION 4: CIVILIZATION STRATEGIES (Extracted from YouTube) ---
+export const CIV_STRATEGIES: Record<string, {
+  name: string;
+  focus: string;
+  keyTechs: string[];
+  keyCivics: string[];
+  tips: string[];
+}> = {
+  // AMERICAS
+  "TEDDY": {
+    name: "America (Bull Moose)",
+    focus: "Culture",
+    keyTechs: ["Flight", "Radio", "Computers"],
+    keyCivics: ["Mysticism", "Conservation", "Environmentalism"],
+    tips: [
+      "Prioritize Earth Goddess Pantheon and Preserves early; settle to maximize Appeal.",
+      "Use Builders to plant Woods (Medieval Fairs) to boost Appeal to 'Breathtaking'.",
+      "Rush Film Studio and Computers for massive Tourism multipliers."
+    ]
+  },
+  "MONTEZUMA": {
+    name: "Aztec",
+    focus: "Domination/Science",
+    keyTechs: ["Mining", "Irrigation", "Industrialization"],
+    keyCivics: ["Early Empire", "Feudalism", "Nationalism"],
+    tips: [
+      "Farm city-state units with Eagle Warriors to convert them into free Builders.",
+      "Settle extremely wide (10+ cities); Tlachtli and luxuries provide Amenities.",
+      "Prioritize settling different luxury resources to stack combat strength bonuses."
+    ]
+  },
+  "POUNDMAKER": {
+    name: "Cree",
+    focus: "Science/Sim",
+    keyTechs: ["Animal Husbandry", "Industrialization", "Chemistry"],
+    keyCivics: ["Early Empire", "Civil Service", "Diplomatic Service"],
+    tips: [
+      "Use Okihtcitaw scout for high combat strength and early Era Score.",
+      "Send internal trade routes to cities with Pastures/Camps to maximize food.",
+      "Build Mekewaps on plains/hills for Production and Housing."
+    ]
+  },
+  "PACHACUTI": {
+    name: "Inca",
+    focus: "Science/Sim",
+    keyTechs: ["Mining", "Engineering", "Industrialization"],
+    keyCivics: ["Code of Laws", "Feudalism", "Globalization"],
+    tips: [
+      "Open with a Builder to construct Terrace Farms immediately.",
+      "Ignore amenity penalties; cities grow and remain productive regardless.",
+      "Use Mountain Tunnels (Qhapaq Ñan) early to boost trade efficiency."
+    ]
+  },
+  "LADY_SIX_SKY": {
+    name: "Maya",
+    focus: "Tall Science",
+    keyTechs: ["Masonry", "Ballistics"],
+    keyCivics: ["Mercenaries"],
+    tips: [
+      "Settle cities within 6 tiles of capital for +10% yields.",
+      "Do not settle near fresh water; rely on Farms/Aqueducts.",
+      "Observatories get adjacency from Farms/Plantations."
+    ]
+  },
+  "WILFRID": {
+    name: "Canada",
+    focus: "Diplo/Culture",
+    keyTechs: ["Conservation"],
+    keyCivics: ["Diplomatic Service"],
+    tips: [
+      "Cannot declare Surprise Wars.",
+      "Tundra farms work like normal farms.",
+      "Build Ice Hockey Rinks for appeal/culture."
+    ]
+  },
+  "PEDRO": {
+    name: "Brazil",
+    focus: "Culture/Science",
+    keyTechs: ["Construction", "Ballistics", "Industrialization"],
+    keyCivics: ["Drama and Poetry", "Mercantilism", "Natural History"],
+    tips: [
+      "Rush Street Carnivals to run the Carnival project for Great Person points.",
+      "Use Free Inquiry Golden Age + Rainforest Commercial Hubs for science.",
+      "Rush Ballistics for +1 production on Lumber Mills (Rainforest)."
+    ]
+  },
+  "SIMON": {
+    name: "Gran Colombia",
+    focus: "Domination",
+    keyTechs: ["Military Science"],
+    keyCivics: ["Mercenaries"],
+    tips: [
+      "+1 Movement to ALL units is broken; use it to pillage and retreat.",
+      "Promote units and move/attack in the same turn.",
+      "Comandante Generals give unique passive buffs; stack them."
+    ]
+  },
+
+  // EUROPE
+  "TRAJAN": {
+    name: "Rome (Trajan)",
+    focus: "Domination/Expansion",
+    keyTechs: ["Iron Working", "Engineering"],
+    keyCivics: ["Political Philosophy", "Civil Service"],
+    tips: [
+      "Free Monuments mean fast culture; rush Feudalism.",
+      "Legions can chop forests/jungles AND build forts.",
+      "Expand wide; free roads help movement."
+    ]
+  },
+  "JULIUS": {
+    name: "Rome (Julius Caesar)",
+    focus: "Domination/Gold",
+    keyTechs: ["Iron Working", "Steel"],
+    keyCivics: ["Mercenaries"],
+    tips: [
+      "Farm Barbarian camps for massive gold.",
+      "Conquer cities to get free units. Snowball early.",
+      "Keep a Wildcard slot open for flexible policy switching."
+    ]
+  },
+  "AMBIORIX": {
+    name: "Gaul",
+    focus: "Domination/Science",
+    keyTechs: ["Iron Working", "Apprenticeship"],
+    keyCivics: ["Early Empire", "Feudalism", "Guilds"],
+    tips: [
+      "Rush Oppidums (Industrial Zone) immediately; they unlock early.",
+      "Build Builders before Monuments; Mines provide culture.",
+      "Save gold to buy tiles for Oppidum placement (can't be next to City Center)."
+    ]
+  },
+  "PERICLES": {
+    name: "Greece (Pericles)",
+    focus: "Culture",
+    keyTechs: ["Currency", "Industrialization", "Computers"],
+    keyCivics: ["Drama and Poetry", "Feudalism", "Ideology"],
+    tips: [
+      "Build Acropolis on hills for easy envoys and culture adjacency.",
+      "Use Wildcard Policy Slot for Autocratic/Republican Legacy early.",
+      "Scale culture through City-State suzerainty (5% per suzerain)."
+    ]
+  },
+  "MATTHIAS": {
+    name: "Hungary",
+    focus: "Domination/Science",
+    keyTechs: ["Iron Working", "Industrialization"],
+    keyCivics: ["Feudalism", "Foreign Ministry"],
+    tips: [
+      "Settle across rivers from City Center for +50% district production.",
+      "Levy City-State units for cheap map control and upgrades.",
+      "Build Thermal Baths (Zoo) for massive production/amenities."
+    ]
+  },
+  "WILHELMINA": {
+    name: "Netherlands",
+    focus: "Science/Sim",
+    keyTechs: ["Celestial Navigation", "Industrialization"],
+    keyCivics: ["Civil Engineering", "Globalization"],
+    tips: [
+      "Use rivers for +2 adjacency on Campuses/Theaters/Industrial Zones.",
+      "Spam Polders on water tiles for food/production/gold.",
+      "Utilize Free Inquiry Golden Age with high-adjacency Harbors."
+    ]
+  },
+  "KRISTINA": {
+    name: "Sweden",
+    focus: "Culture",
+    keyTechs: ["Printing", "Flight", "Computers"],
+    keyCivics: ["Drama and Poetry", "Humanism"],
+    tips: [
+      "Build Apadana/Great Library to auto-theme Great Works.",
+      "Construct Open Air Museums in every city; settle diverse terrains.",
+      "Pass World Congress resolutions for Great Person points."
+    ]
+  },
+  "ALEXANDER": {
+    name: "Macedon",
+    focus: "Domination/Science",
+    keyTechs: ["Bronze Working", "Iron Working"],
+    keyCivics: ["Military Training"],
+    tips: [
+      "Build Basilikoi Paides in Encampments for science from unit production.",
+      "Never stop warring; you have no war weariness.",
+      "Heal entire army by capturing a city with a wonder."
+    ]
+  },
+  "VICTORIA": {
+    name: "England",
+    focus: "Naval/Science",
+    keyTechs: ["Celestial Navigation", "Industrialization"],
+    keyCivics: ["Naval Tradition"],
+    tips: [
+      "RUSH Royal Navy Dockyards. Cheap and give gold/trade.",
+      "Use 'Free Inquiry' + 'Naval Infrastructure' for massive Science.",
+      "Strategic Resource mines get +1 production."
+    ]
+  },
+  "CATHERINE": {
+    name: "France",
+    focus: "Culture/Wonders",
+    keyTechs: ["Castles"],
+    keyCivics: ["Divine Right"],
+    tips: [
+      "Double Tourism from Wonders.",
+      "Chateaux must be next to bonus resource/luxury.",
+      "Use Spies to steal Great Works."
+    ]
+  },
+  "HARALD": {
+    name: "Norway",
+    focus: "Religious/Naval",
+    keyTechs: ["Sailing", "Shipbuilding"],
+    keyCivics: ["Theology"],
+    tips: [
+      "Pillage Economy: You heal when coastal raiding.",
+      "Protect Apostles with Longships.",
+      "Stave Churches give production on sea resources."
+    ]
+  },
+  "JOAO": {
+    name: "Portugal",
+    focus: "Trade Gold",
+    keyTechs: ["Cartography"],
+    keyCivics: ["Mercantilism"],
+    tips: [
+      "Can only trade with coastal cities.",
+      "Trade routes yield +50% yields.",
+      "Nau unit can build Feitoria in foreign lands for massive trade bonuses."
+    ]
+  },
+  "BASIL": {
+    name: "Byzantium",
+    focus: "Religion/Domination",
+    keyTechs: ["Horseback Riding", "Printing"],
+    keyCivics: ["Divine Right"],
+    tips: [
+      "Hippodromes give free Heavy Cavalry; build them everywhere.",
+      "Spread religion to enemies for +3 Combat Strength per city.",
+      "Cavalry does full damage to walls if city follows your religion."
+    ]
+  },
+
+  // AFRICA & MIDDLE EAST
+  "SALADIN": {
+    name: "Arabia",
+    focus: "Religion/Domination",
+    keyTechs: ["Stirrups", "Cartography", "Combustion"],
+    keyCivics: ["Theology", "Divine Right", "Theocracy"],
+    tips: [
+      "Utilize Mamluk unique unit which heals every turn.",
+      "Build Madrasas early for faith generation alongside science.",
+      "Last Great Prophet guarantee allows early economic focus."
+    ]
+  },
+  "AMANITORE": {
+    name: "Nubia",
+    focus: "Production/Domination",
+    keyTechs: ["Masonry", "Apprenticeship", "Ballistics"],
+    keyCivics: ["Early Empire", "Feudalism"],
+    tips: [
+      "Build Nubian Pyramids on desert tiles for Faith/Food/District boost.",
+      "Utilize +20% production toward districts.",
+      "Use Pitati Archers for early defense or aggression."
+    ]
+  },
+  "SUNDIATA": {
+    name: "Mali (Sundiata)",
+    focus: "Culture/Gold",
+    keyTechs: ["Currency", "Apprenticeship"],
+    keyCivics: ["Drama and Poetry", "Natural History"],
+    tips: [
+      "Purchase Markets and Suguba buildings with Gold/Faith immediately.",
+      "Recruit Great Writers; Works of Writing gain extra gold/tourism.",
+      "Use Moksha to purchase districts with Faith."
+    ]
+  },
+  "MANSA": {
+    name: "Mali (Mansa Musa)",
+    focus: "Gold/Faith",
+    keyTechs: ["Currency"],
+    keyCivics: ["Guilds"],
+    tips: [
+      "Mines give -1 Production but +4 Gold. BUY everything.",
+      "Suguba discounts purchases by 20%.",
+      "Settle DESERT for Desert Folklore pantheon."
+    ]
+  },
+  "MENELIK": {
+    name: "Ethiopia",
+    focus: "Religion/Culture",
+    keyTechs: ["Astrology", "Flight"],
+    keyCivics: ["Theology", "Reformed Church"],
+    tips: [
+      "Settle on Hills for combat/yield bonuses.",
+      "15% of Faith is converted to Science/Culture.",
+      "Rock-Hewn Churches on hills are massive Faith generators."
+    ]
+  },
+  "SULEIMAN": {
+    name: "Ottomans",
+    focus: "Domination/Science",
+    keyTechs: ["Gunpowder", "Banking", "Industrialization"],
+    keyCivics: ["Mercenaries", "Democracy"],
+    tips: [
+      "Build Grand Bazaar in every city for amenities/strategics.",
+      "Pre-build Warriors and upgrade to Janissaries to avoid pop loss.",
+      "Rush Democracy to maximize Grand Bazaar trade routes."
+    ]
+  },
+  "GILGAMESH": {
+    name: "Sumeria",
+    focus: "Early Rush/Science",
+    keyTechs: ["Writing"],
+    keyCivics: ["Foreign Trade"],
+    tips: [
+      "War Cart is available turn 1; rush nearest neighbor.",
+      "Ziggurat improvement gives Science; spam on rivers.",
+      "No warmonger penalty for joint wars."
+    ]
+  },
+  "HAMMURABI": {
+    name: "Babylon",
+    focus: "Eureka Science",
+    keyTechs: ["Apprenticeship", "Industrialization"],
+    keyCivics: ["Recorded History"],
+    tips: [
+      "Science penalty (-50%) means you MUST trigger Eurekas.",
+      "Build 3 Mines -> Apprenticeship instantly.",
+      "Great Library is top priority wonder."
+    ]
+  },
+  "CYRUS": {
+    name: "Persia",
+    focus: "Culture/Domination",
+    keyTechs: ["Iron Working", "Industrialization"],
+    keyCivics: ["Political Philosophy", "Medieval Fairs"],
+    tips: [
+      "Declare Surprise Wars for +2 movement.",
+      "Utilize Pairidaezas for culture/gold appeal.",
+      "Gain culture on internal trade routes."
+    ]
+  },
+  "DIDO": {
+    name: "Phoenicia",
+    focus: "Naval Expansion",
+    keyTechs: ["Writing", "Celestial Navigation"],
+    keyCivics: ["Foreign Trade"],
+    tips: [
+      "Move Capital project unlocks colonial taxes.",
+      "Cothon builds naval units/settlers 50% faster.",
+      "Settlers have +2 movement and vision on water."
+    ]
+  },
+
+  // ASIA & OCEANIA
+  "QIN": {
+    name: "China (Qin Shi Huang)",
+    focus: "Culture/Wonders",
+    keyTechs: ["Astrology", "Masonry", "Apprenticeship"],
+    keyCivics: ["Drama and Poetry", "Feudalism"],
+    tips: [
+      "Use Builder charges to rush Ancient/Classical wonders.",
+      "Select Monumentality Golden Age to buy civilians with Faith.",
+      "Found religion with Sacred Places to boost wonder yields."
+    ]
+  },
+  "YONGLE": {
+    name: "China (Yongle)",
+    focus: "Science",
+    keyTechs: ["Apprenticeship", "Industrialization", "Rocketry"],
+    keyCivics: ["Feudalism", "Globalization"],
+    tips: [
+      "Use Lijia project (Food) to rush cities to 10 Pop quickly.",
+      "Leverage extra Eureka/Inspiration progress (50% vs 40%).",
+      "Prioritize Eurekas heavily."
+    ]
+  },
+  "TOKUGAWA": {
+    name: "Japan (Tokugawa)",
+    focus: "Science/Sim",
+    keyTechs: ["Celestial Navigation", "Industrialization"],
+    keyCivics: ["Globalization"],
+    tips: [
+      "Send Internal Trade Routes exclusively for district-scaled yields.",
+      "Cluster districts for Meiji Restoration adjacency.",
+      "Target Communism for Collectivization card."
+    ]
+  },
+  "HOJO": {
+    name: "Japan (Hojo)",
+    focus: "District Clusters",
+    keyTechs: ["Electronics"],
+    keyCivics: ["Feudalism"],
+    tips: [
+      "Meiji Restoration: Districts get +1 adjacency from adjacent districts.",
+      "Cluster cities close together.",
+      "Electronics Factories give culture to nearby cities."
+    ]
+  },
+  "SEONDEOK": {
+    name: "Korea",
+    focus: "Pure Science",
+    keyTechs: ["Writing", "Education"],
+    keyCivics: ["Recorded History"],
+    tips: [
+      "Seowons gives +4 Science. Place them isolated on hills.",
+      "Governor Pingala in your biggest city is mandatory.",
+      "Mines adjacent to Seowons get +1 Science."
+    ]
+  },
+  "BA_TRIEU": {
+    name: "Vietnam",
+    focus: "Domination/Defense",
+    keyTechs: ["Bronze Working", "Machinery", "Ballistics"],
+    keyCivics: ["Medieval Fairs", "Defensive Tactics"],
+    tips: [
+      "Build Thanh (Encampment) early for culture.",
+      "Units gain bonuses in Woods/Rainforest/Marsh.",
+      "Use Voi Chien to kite enemies efficiently."
+    ]
+  },
+  "JOHN_CURTIN": {
+    name: "Australia",
+    focus: "Appeal/Science",
+    keyTechs: ["Scientific Theory"],
+    keyCivics: ["Conservation"],
+    tips: [
+      "Campuses get +3 adjacency on 'Breathtaking' tiles.",
+      "Liberate cities to get 100% Production for 10 turns.",
+      "Build Outback Stations for massive food/production."
+    ]
+  },
+  "GANDHI": {
+    name: "India",
+    focus: "Peaceful Religion",
+    keyTechs: ["Astrology"],
+    keyCivics: ["Theology"],
+    tips: [
+      "Gain Faith from every Civ you met that has a religion.",
+      "Stepwells provide Housing and Food.",
+      "War Weariness is doubled for enemies fighting you."
+    ]
+  },
+  "GENGHIS": {
+    name: "Mongolia",
+    focus: "Cavalry Domination",
+    keyTechs: ["Horseback Riding", "Stirrups"],
+    keyCivics: ["Divine Right"],
+    tips: [
+      "Send trade route to target for +6 Combat Strength.",
+      "Capture enemy cavalry instead of killing them.",
+      "Keshigs are ranged cavalry; use them to escort civilians."
+    ]
+  },
+  "JAYAVARMAN": {
+    name: "Khmer",
+    focus: "Tall Religion",
+    keyTechs: ["Engineering"],
+    keyCivics: ["Theology"],
+    tips: [
+      "Holy Sites on rivers give Food equal to adjacency.",
+      "Aqueducts give Amenity and Faith.",
+      "River Goddess Pantheon is mandatory."
+    ]
+  }
+};
+```
