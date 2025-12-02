@@ -53,11 +53,12 @@ export default function Dashboard() {
   }, [queryClient]);
 
   const baseState = serverState || mockGameState;
-  const dynamicRecs = generateRecommendations(baseState);
+  const advice = generateAdvice(baseState);
   
   const state = {
     ...baseState,
-    recommendations: dynamicRecs.length > 0 ? dynamicRecs : (baseState.recommendations || [])
+    alerts: advice.alerts,
+    recommendations: advice.recommendations.length > 0 ? advice.recommendations : (baseState.recommendations || [])
   };
 
   const isConnected = !!serverState;
