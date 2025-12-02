@@ -1,31 +1,5 @@
+import { GameState } from "@shared/schema";
 import { BENCHMARKS, CIV_STRATEGIES, GENERAL_ADVICE } from "./strategyDb";
-
-export interface GameStateForAdvisor {
-  gameSpeed?: string;
-  turn: number;
-  era: string;
-  leader: string;
-  yields: {
-    science: number;
-    culture: number;
-    faith: number;
-    gold: number;
-    production: number;
-    food: number;
-  };
-  currentResearch?: {
-    name: string;
-    turnsLeft: number;
-    progress: number;
-    icon?: string;
-  };
-  currentCivic?: {
-    name: string;
-    turnsLeft: number;
-    progress: number;
-    icon?: string;
-  };
-}
 
 const SPEED_MULTIPLIERS: Record<string, number> = {
   "GAMESPEED_ONLINE": 1,
@@ -35,16 +9,14 @@ const SPEED_MULTIPLIERS: Record<string, number> = {
   "GAMESPEED_MARATHON": 6
 };
 
-export interface Recommendation {
-  id: number;
-  category: 'city' | 'unit' | 'tech' | 'civic';
-  title: string;
-  description: string;
-  priority: 'high' | 'medium' | 'low';
+export interface AdvisorResult {
+  alerts: any[];
+  recommendations: any[];
 }
 
-export function generateRecommendations(state: GameStateForAdvisor): Recommendation[] {
-  const recs: Recommendation[] = [];
+export function generateAdvice(state: GameState): AdvisorResult {
+  const alerts: any[] = [];
+  const recommendations: any[] = [];
   let idCounter = 1;
 
   const multiplier = state.gameSpeed ? (SPEED_MULTIPLIERS[state.gameSpeed] || 1) : 1;
@@ -55,81 +27,76 @@ export function generateRecommendations(state: GameStateForAdvisor): Recommendat
   );
   
   if (benchmark) {
-    const scaledScience = benchmark.metrics.science * multiplier;
-    const scaledCulture = benchmark.metrics.culture * multiplier;
-    
-    if (state.yields.science < scaledScience) {
-      recs.push({
+    if (state.yields.science < benchmark.metrics.science) {
+      alerts.push({
         id: idCounter++,
-        category: 'city',
-        title: `Science Lagging (Turn ${state.turn})`,
-        description: `Target: ${Math.round(scaledScience)} science/turn. ${benchmark.advice}`,
-        priority: 'high'
+        type: 'danger',
+        message: `Science Critical (Turn ${state.turn})`,
+        details: `Current: ${state.yields.science}. Target: ${benchmark.metrics.science}. ${benchmark.advice}`
       });
     }
-    if (state.yields.culture < scaledCulture) {
-      recs.push({
+    if (state.yields.culture < benchmark.metrics.culture) {
+      alerts.push({
         id: idCounter++,
-        category: 'civic',
-        title: `Culture Lagging (Turn ${state.turn})`,
-        description: `Target: ${Math.round(scaledCulture)} culture/turn. Vital for government unlocks.`,
-        priority: 'high'
+        type: 'danger',
+        message: `Culture Critical (Turn ${state.turn})`,
+        details: `Current: ${state.yields.culture}. Target: ${benchmark.metrics.culture}. Vital for government unlocks.`
       });
     }
-  }
-
-  const leaderUpper = state.leader.toUpperCase();
-  const civKey = Object.keys(CIV_STRATEGIES).find(key => {
-    const strat = CIV_STRATEGIES[key];
-    return leaderUpper.includes(key) || 
-           leaderUpper.includes(strat.name.split(" ")[0].toUpperCase()) ||
-           strat.name.toUpperCase().includes(leaderUpper.split(" ")[0]);
-  });
-
-  if (civKey) {
-    const strat = CIV_STRATEGIES[civKey];
-    if (strat.keyTechs.length > 0) {
-      recs.push({
-        id: idCounter++,
-        category: 'tech',
-        title: `${strat.name} Tech Path`,
-        description: `Focus: ${strat.focus}. Prioritize: ${strat.keyTechs.join(", ")}.`,
-        priority: 'medium'
-      });
-    }
-    const tipIndex = Math.floor(normalizedTurn / 20) % strat.tips.length;
-    recs.push({
-      id: idCounter++,
-      category: 'city',
-      title: `${strat.name} Strategy`,
-      description: strat.tips[tipIndex],
-      priority: 'low'
-    });
   }
 
   GENERAL_ADVICE.forEach(rule => {
-    const virtualState = { 
-      ...state, 
-      turn: normalizedTurn,
-      yields: {
-        ...state.yields,
-        science: state.yields.science / multiplier,
-        culture: state.yields.culture / multiplier,
-        gold: state.yields.gold / multiplier,
-        production: state.yields.production / multiplier
+    const virtualState = { ...state, turn: normalizedTurn };
+    try {
+      if (rule.condition(virtualState)) {
+        alerts.push({
+          id: idCounter++,
+          type: 'opportunity',
+          message: rule.title,
+          details: rule.desc
+        });
       }
-    };
-    
-    if (rule.condition(virtualState)) {
-      recs.push({
-        id: idCounter++,
-        category: rule.type as any,
-        title: rule.title,
-        description: rule.desc,
-        priority: 'high'
-      });
+    } catch (e) {
     }
   });
 
-  return recs;
+  const civKey = Object.keys(CIV_STRATEGIES).find(key => 
+    state.leader.toUpperCase().includes(key) || 
+    state.leader.toUpperCase().includes(CIV_STRATEGIES[key].name.toUpperCase().split(" ")[0])
+  );
+
+  if (civKey) {
+    const strat = CIV_STRATEGIES[civKey];
+    
+    if (strat.keyTechs.length > 0) {
+      recommendations.push({
+        id: idCounter++,
+        category: 'tech',
+        title: `${strat.name} Tech Path`,
+        description: `Prioritize: ${strat.keyTechs.join(", ")}.`,
+        priority: 'high'
+      });
+    }
+
+    if (strat.keyCivics.length > 0) {
+      recommendations.push({
+        id: idCounter++,
+        category: 'civic',
+        title: `${strat.name} Civic Path`,
+        description: `Target: ${strat.keyCivics.join(", ")}.`,
+        priority: 'medium'
+      });
+    }
+
+    const randomTip = strat.tips[state.turn % strat.tips.length]; 
+    recommendations.push({
+      id: idCounter++,
+      category: 'city',
+      title: `${strat.name} Strategy`,
+      description: randomTip,
+      priority: 'medium'
+    });
+  }
+
+  return { alerts, recommendations };
 }

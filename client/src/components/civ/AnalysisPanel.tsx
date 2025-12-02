@@ -1,116 +1,74 @@
-import { useState, useEffect } from "react";
-import { GameState } from "@/lib/mockData";
-import { Brain, Loader2, Scan, Target, AlertOctagon, ShieldAlert } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Progress } from "@/components/ui/progress";
-import { motion, AnimatePresence } from "framer-motion";
+import { GameState } from "@shared/schema";
+import { Brain, AlertTriangle, Info, CheckCircle2 } from "lucide-react";
+import { motion } from "framer-motion";
 
-interface AnalysisPanelProps {
-  alerts: GameState['alerts'];
+interface Alert {
+  id: number;
+  type: 'danger' | 'opportunity' | 'info';
+  message: string;
+  details: string;
 }
 
-export function AnalysisPanel({ alerts }: AnalysisPanelProps) {
-  const [scanning, setScanning] = useState(false);
-  const [scanProgress, setScanProgress] = useState(0);
+interface AnalysisPanelProps {
+  alerts?: Alert[];
+}
 
-  const handleScan = () => {
-    setScanning(true);
-    setScanProgress(0);
-  };
-
-  useEffect(() => {
-    if (scanning) {
-      const interval = setInterval(() => {
-        setScanProgress(prev => {
-          if (prev >= 100) {
-            clearInterval(interval);
-            setScanning(false);
-            return 100;
-          }
-          return prev + 2;
-        });
-      }, 30);
-      return () => clearInterval(interval);
-    }
-  }, [scanning]);
-
+export function AnalysisPanel({ alerts = [] }: AnalysisPanelProps) {
   return (
-    <div className="glass-panel rounded-xl p-6 flex flex-col gap-6 relative overflow-hidden h-full">
-      {/* Decorative Grid Background */}
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:20px_20px] [mask-image:radial-gradient(ellipse_at_center,black_40%,transparent_100%)] pointer-events-none" />
+    <div className="glass-panel rounded-xl p-6 flex flex-col gap-4 h-full border border-white/10 relative overflow-hidden">
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none" />
 
-      <div className="flex items-center justify-between relative z-10">
+      <div className="flex items-center justify-between relative z-10 border-b border-white/5 pb-4">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-accent/10 rounded-lg border border-accent/20">
-            <Brain className="w-6 h-6 text-accent" />
+          <div className="p-2 bg-primary/10 rounded-lg border border-primary/20">
+            <Brain className="w-5 h-5 text-primary" />
           </div>
           <div>
-            <h2 className="text-xl font-serif text-foreground">Advisor Analysis</h2>
-            <p className="text-xs text-muted-foreground font-mono">AI MODEL: STRATEGOS-V6</p>
+            <h2 className="text-lg font-serif text-foreground tracking-wide">Advisor Analysis</h2>
+            <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-widest">
+              Live Evaluation • Turn Processing
+            </p>
           </div>
         </div>
-        <Button 
-          onClick={handleScan} 
-          disabled={scanning}
-          variant="outline" 
-          className="border-accent/50 text-accent hover:bg-accent/10 hover:text-accent font-mono uppercase tracking-wider"
-        >
-          {scanning ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Scan className="w-4 h-4 mr-2" />}
-          {scanning ? "Analyzing..." : "Scan Screen"}
-        </Button>
       </div>
 
-      {/* Scanner Visual */}
-      <div className="flex-1 bg-black/40 rounded-lg border border-white/5 relative overflow-hidden group">
-         {/* Simulated Screen Content Placeholder */}
-        <div className="absolute inset-0 flex items-center justify-center opacity-20">
-           <Target className="w-32 h-32 text-white/10" strokeWidth={0.5} />
-        </div>
-
-        <AnimatePresence>
-          {scanning && (
+      <div className="flex-1 overflow-y-auto space-y-3 relative z-10 pr-2 custom-scrollbar">
+        {alerts && alerts.length > 0 ? (
+          alerts.map((alert, i) => (
             <motion.div 
-              initial={{ top: "-10%" }}
-              animate={{ top: "110%" }}
-              transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-              className="absolute left-0 right-0 h-1 bg-accent shadow-[0_0_20px_rgba(6,182,212,0.5)] z-20"
-            />
-          )}
-        </AnimatePresence>
-
-        <div className="absolute bottom-4 left-4 right-4">
-           {scanning ? (
-             <div className="space-y-2">
-               <div className="flex justify-between text-xs font-mono text-accent">
-                 <span>PROCESSING VISUAL DATA...</span>
-                 <span>{scanProgress}%</span>
-               </div>
-               <Progress value={scanProgress} className="h-1 bg-accent/20" />
-             </div>
-           ) : (
-             <div className="space-y-3">
-               {alerts.map((alert, i) => (
-                 <motion.div 
-                    key={alert.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.1 }}
-                    className="bg-card/80 backdrop-blur-sm border border-white/10 p-3 rounded flex gap-3 items-start"
-                 >
-                   {alert.type === 'danger' ? (
-                     <ShieldAlert className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
-                   ) : (
-                     <AlertOctagon className="w-5 h-5 text-primary shrink-0 mt-0.5" />
-                   )}
-                   <div>
-                     <h4 className="text-sm font-bold text-foreground">{alert.message}</h4>
-                     <p className="text-xs text-muted-foreground">{alert.details}</p>
-                   </div>
-                 </motion.div>
-               ))}
-             </div>
-           )}
-        </div>
+              key={alert.id || i}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: i * 0.1 }}
+              className={`p-4 rounded-lg border flex gap-3 items-start ${
+                alert.type === 'danger' 
+                  ? 'bg-destructive/10 border-destructive/30' 
+                  : 'bg-yellow-500/10 border-yellow-500/30'
+              }`}
+            >
+              {alert.type === 'danger' ? (
+                <AlertTriangle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
+              ) : (
+                <Info className="w-5 h-5 text-yellow-500 shrink-0 mt-0.5" />
+              )}
+              <div>
+                <h4 className={`text-sm font-bold ${
+                  alert.type === 'danger' ? 'text-destructive' : 'text-yellow-500'
+                }`}>
+                  {alert.message}
+                </h4>
+                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                  {alert.details}
+                </p>
+              </div>
+            </motion.div>
+          ))
+        ) : (
+          <div className="h-full flex flex-col items-center justify-center text-muted-foreground gap-2 opacity-50">
+            <CheckCircle2 className="w-10 h-10" />
+            <p className="text-sm font-mono">ALL SYSTEMS NOMINAL</p>
+          </div>
+        )}
       </div>
     </div>
   );

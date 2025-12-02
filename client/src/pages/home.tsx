@@ -5,7 +5,7 @@ import { ActionList } from "@/components/civ/ActionList";
 import { AnalysisPanel } from "@/components/civ/AnalysisPanel";
 import { Beaker, Music, Anchor, Coins, Hammer, Wheat, Menu, Settings, User, Wifi, WifiOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { generateRecommendations } from "@/lib/advisor";
+import { generateAdvice } from "@/lib/advisor";
 import { useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import generatedImage from '@assets/generated_images/a_dark,_textured_hex_map_background_for_a_strategy_game_interface.png';

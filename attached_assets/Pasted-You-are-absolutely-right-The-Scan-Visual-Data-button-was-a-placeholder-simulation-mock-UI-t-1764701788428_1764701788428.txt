@@ -1,0 +1,225 @@
+You are absolutely right. The **"Scan Visual Data"** button was a placeholder simulation (mock UI) that pretended to use computer vision. Since we now have a **real data pipeline** via the Lua Bridge, this fake scanner is useless and misleading.
+
+We should **delete the fake scanner** and replace it with a **"Critical Alerts"** system.
+
+Here is the plan to fix it:
+
+1.  **The Logic:** Update the Advisor to separate "Urgent Warnings" (Alerts) from "General Advice" (Recommendations).
+2.  **The UI:** Rewrite the `AnalysisPanel` to show these critical alerts immediately, removing the fake "Scanning..." animation.
+
+### **Step 1: Upgrade the Advisor (`advisor.ts`)**
+
+We will modify the advisor to sort its output. High-priority items become **Alerts**. Medium/Low items become **Recommendations**.
+
+**Action:** Replace `client/src/lib/advisor.ts` with this code.
+
+```typescript
+import { GameState } from "@shared/schema";
+import { BENCHMARKS, CIV_STRATEGIES, GENERAL_ADVICE } from "./strategyDb";
+
+const SPEED_MULTIPLIERS: Record<string, number> = {
+  "GAMESPEED_ONLINE": 1,
+  "GAMESPEED_QUICK": 1.33,
+  "GAMESPEED_STANDARD": 2,
+  "GAMESPEED_EPIC": 3,
+  "GAMESPEED_MARATHON": 6
+};
+
+// Define the two types of outputs we need
+export interface AdvisorResult {
+  alerts: any[];
+  recommendations: any[];
+}
+
+export function generateAdvice(state: GameState): AdvisorResult {
+  const alerts: any[] = [];
+  const recommendations: any[] = [];
+  let idCounter = 1;
+
+  // 1. NORMALIZE TURN
+  const multiplier = state.gameSpeed ? (SPEED_MULTIPLIERS[state.gameSpeed] || 1) : 1;
+  const normalizedTurn = state.turn / multiplier;
+
+  // 2. BENCHMARK CHECKS (Urgent -> Alerts)
+  const benchmark = BENCHMARKS.find(b => 
+    normalizedTurn >= b.turn - 5 && normalizedTurn <= b.turn + 5
+  );
+  
+  if (benchmark) {
+    if (state.yields.science < benchmark.metrics.science) {
+      alerts.push({
+        id: idCounter++,
+        type: 'danger', // Red Icon
+        message: `Science Critical (Turn ${state.turn})`,
+        details: `Current: ${state.yields.science}. Target: ${benchmark.metrics.science}. ${benchmark.advice}`
+      });
+    }
+    if (state.yields.culture < benchmark.metrics.culture) {
+      alerts.push({
+        id: idCounter++,
+        type: 'danger',
+        message: `Culture Critical (Turn ${state.turn})`,
+        details: `Current: ${state.yields.culture}. Target: ${benchmark.metrics.culture}. Vital for government unlocks.`
+      });
+    }
+  }
+
+  // 3. GENERAL RULES (Urgent -> Alerts)
+  GENERAL_ADVICE.forEach(rule => {
+    const virtualState = { ...state, turn: normalizedTurn };
+    if (rule.condition(virtualState)) {
+      alerts.push({
+        id: idCounter++,
+        type: 'opportunity', // Yellow Icon
+        message: rule.title,
+        details: rule.desc
+      });
+    }
+  });
+
+  // 4. CIV SPECIFIC STRATEGIES (Strategic -> Recommendations)
+  const civKey = Object.keys(CIV_STRATEGIES).find(key => 
+    state.leader.toUpperCase().includes(key) || 
+    state.leader.toUpperCase().includes(CIV_STRATEGIES[key].name.toUpperCase())
+  );
+
+  if (civKey) {
+    const strat = CIV_STRATEGIES[civKey];
+    
+    // Tech Path Advice
+    if (strat.keyTechs.length > 0) {
+      recommendations.push({
+        id: idCounter++,
+        category: 'tech',
+        title: `${strat.name} Tech Path`,
+        description: `Prioritize: ${strat.keyTechs.join(", ")}.`,
+        priority: 'high'
+      });
+    }
+
+    // Rotating Strategy Tip
+    const randomTip = strat.tips[state.turn % strat.tips.length]; 
+    recommendations.push({
+      id: idCounter++,
+      category: 'city',
+      title: `${strat.name} Strategy`,
+      description: randomTip,
+      priority: 'medium'
+    });
+  }
+
+  return { alerts, recommendations };
+}
+```
+
+### **Step 2: Clean up the UI (`AnalysisPanel.tsx`)**
+
+Delete the fake "Scanner" code and replace it with a clean list of the Alerts we just generated.
+
+**Action:** Replace `client/src/components/civ/AnalysisPanel.tsx` with this code.
+
+```typescript
+import { GameState } from "@shared/schema";
+import { Brain, AlertTriangle, Info, CheckCircle2 } from "lucide-react";
+import { motion } from "framer-motion";
+
+interface AnalysisPanelProps {
+  alerts: GameState['alerts'];
+}
+
+export function AnalysisPanel({ alerts = [] }: AnalysisPanelProps) {
+  return (
+    <div className="glass-panel rounded-xl p-6 flex flex-col gap-4 h-full border border-white/10 relative overflow-hidden">
+      {/* Background Grid Effect */}
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:20px_20px] pointer-events-none" />
+
+      {/* Header */}
+      <div className="flex items-center justify-between relative z-10 border-b border-white/5 pb-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2 bg-primary/10 rounded-lg border border-primary/20">
+            <Brain className="w-5 h-5 text-primary" />
+          </div>
+          <div>
+            <h2 className="text-lg font-serif text-foreground tracking-wide">Advisor Analysis</h2>
+            <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-widest">
+              Live Evaluation • Turn Processing
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Alerts Content */}
+      <div className="flex-1 overflow-y-auto space-y-3 relative z-10 pr-2 custom-scrollbar">
+        {alerts && alerts.length > 0 ? (
+          alerts.map((alert, i) => (
+            <motion.div 
+              key={alert.id || i}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: i * 0.1 }}
+              className={`p-4 rounded-lg border flex gap-3 items-start ${
+                alert.type === 'danger' 
+                  ? 'bg-destructive/10 border-destructive/30' 
+                  : 'bg-yellow-500/10 border-yellow-500/30'
+              }`}
+            >
+              {alert.type === 'danger' ? (
+                <AlertTriangle className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
+              ) : (
+                <Info className="w-5 h-5 text-yellow-500 shrink-0 mt-0.5" />
+              )}
+              <div>
+                <h4 className={`text-sm font-bold ${
+                  alert.type === 'danger' ? 'text-destructive' : 'text-yellow-500'
+                }`}>
+                  {alert.message}
+                </h4>
+                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                  {alert.details}
+                </p>
+              </div>
+            </motion.div>
+          ))
+        ) : (
+          <div className="h-full flex flex-col items-center justify-center text-muted-foreground gap-2 opacity-50">
+            <CheckCircle2 className="w-10 h-10" />
+            <p className="text-sm font-mono">ALL SYSTEMS NOMINAL</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+```
+
+### **Step 3: Connect the Pipes (`home.tsx`)**
+
+Finally, update the main page to use the new `generateAdvice` function and split the results.
+
+**Action:** Update `client/src/pages/home.tsx` (Look for the Advisor logic section).
+
+```typescript
+// Change the import
+import { generateAdvice } from "@/lib/advisor"; 
+
+// ... inside Dashboard component ...
+
+  const baseState = serverState || mockGameState;
+
+  // --- CHANGED LOGIC START ---
+  // Generate both Alerts and Recommendations
+  const advice = generateAdvice(baseState);
+  
+  const state = {
+    ...baseState,
+    alerts: advice.alerts, // Urgent stuff goes to Analysis Panel
+    recommendations: advice.recommendations // Strategy goes to Action List
+  };
+  // --- CHANGED LOGIC END ---
+
+  return (
+    // ... rest of JSX stays the same
+```
+
+**Result:**
+The fake "Scan Visual Data" button is gone. Now, that panel will purely show high-priority warnings (Red/Yellow boxes) generated by your new strategy database logic. If everything is going well, it will simply say "ALL SYSTEMS NOMINAL".
