@@ -1,53 +1,47 @@
-import { pgTable, serial, text, integer, jsonb, timestamp } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-export const gameStates = pgTable("game_states", {
-  id: serial("id").primaryKey(),
-  gameSpeed: text("game_speed"),
-  turn: integer("turn").notNull(),
-  era: text("era").notNull(),
-  leader: text("leader").notNull(),
-  yields: jsonb("yields").notNull().$type<{
-    science: number;
-    culture: number;
-    faith: number;
-    gold: number;
-    production: number;
-    food: number;
-  }>(),
-  currentResearch: jsonb("current_research").$type<{
-    name: string;
-    turnsLeft: number;
-    progress: number;
-    icon?: string;
-  }>(),
-  currentCivic: jsonb("current_civic").$type<{
-    name: string;
-    turnsLeft: number;
-    progress: number;
-    icon?: string;
-  }>(),
-  alerts: jsonb("alerts").$type<Array<{
-    id: number;
-    type: 'danger' | 'opportunity' | 'info';
-    message: string;
-    details: string;
-  }>>(),
-  recommendations: jsonb("recommendations").$type<Array<{
-    id: number;
-    category: 'city' | 'unit' | 'tech' | 'civic';
-    title: string;
-    description: string;
-    priority: 'high' | 'medium' | 'low';
-  }>>(),
-  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+export const gameStateSchema = z.object({
+  gameSpeed: z.string().optional(),
+  turn: z.number(),
+  era: z.string(),
+  leader: z.string(),
+  yields: z.object({
+    science: z.number(),
+    culture: z.number(),
+    faith: z.number(),
+    gold: z.number(),
+    production: z.number(),
+    food: z.number(),
+  }),
+  currentResearch: z.object({
+    name: z.string(),
+    turnsLeft: z.number(),
+    progress: z.number(),
+    icon: z.string().optional(),
+  }).optional(),
+  currentCivic: z.object({
+    name: z.string(),
+    turnsLeft: z.number(),
+    progress: z.number(),
+    icon: z.string().optional(),
+  }).optional(),
+  alerts: z.array(z.object({
+    id: z.number(),
+    type: z.enum(['danger', 'opportunity', 'info']),
+    message: z.string(),
+    details: z.string(),
+  })).optional(),
+  recommendations: z.array(z.object({
+    id: z.number(),
+    category: z.enum(['city', 'unit', 'tech', 'civic']),
+    title: z.string(),
+    description: z.string(),
+    priority: z.enum(['high', 'medium', 'low']),
+  })).optional(),
 });
 
-export const insertGameStateSchema = createInsertSchema(gameStates).omit({
-  id: true,
-  updatedAt: true,
-});
+export type GameState = z.infer<typeof gameStateSchema>;
 
-export type InsertGameState = z.infer<typeof insertGameStateSchema>;
-export type GameState = typeof gameStates.$inferSelect;
+// Legacy types for compatibility
+export type User = any;
+export type InsertUser = any;

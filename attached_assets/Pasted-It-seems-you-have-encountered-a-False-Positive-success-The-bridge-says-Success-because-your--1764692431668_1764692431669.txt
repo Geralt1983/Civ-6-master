@@ -1,0 +1,126 @@
+It seems you have encountered a "False Positive" success.
+
+The bridge says "Success" because your Replit server is accepting the message, but—because the specific API routes likely weren't saved or updated correctly—it is just sending back the "Home Page" HTML instead of actually saving the data. This causes the dashboard to fall back to the Mock Data (Rome/Trajan) because it can't find real data.
+
+Also, to clarify: **The "Database" is not involved here.** We designed this to store the game state in **RAM (Memory)** for speed. You will not see updates in your PostgreSQL database; that is normal.
+
+Here is how to fix the server code so it actually listens.
+
+### **Step 1: Fix the Server Routes (The Critical Miss)**
+
+Go to your **Replit** file list and open `server/routes.ts`.
+It likely looks empty (just boilerplate). **Replace the entire file** with this code to actually open the `/api/gamestate` channel.
+
+**File:** `server/routes.ts`
+
+```typescript
+import type { Express } from "express";
+import { createServer, type Server } from "http";
+import { storage } from "./storage";
+import { gameStateSchema } from "@shared/schema";
+
+export async function registerRoutes(
+  httpServer: Server,
+  app: Express
+): Promise<Server> {
+
+  // 1. RECEIVE DATA (From your PC)
+  app.post("/api/gamestate", async (req, res) => {
+    console.log("📥 Receiving Game State from Bridge...");
+    
+    // Parse the incoming data to make sure it's valid
+    const result = gameStateSchema.safeParse(req.body);
+    if (!result.success) {
+      console.error("❌ Invalid Data:", result.error);
+      return res.status(400).json({ error: "Invalid game state data" });
+    }
+    
+    // Save to Memory
+    const updated = await storage.updateGameState(result.data);
+    console.log(`✅ Game State Updated: Turn ${updated.turn} (${updated.leader})`);
+    res.json(updated);
+  });
+
+  // 2. SEND DATA (To your Dashboard)
+  app.get("/api/gamestate", async (req, res) => {
+    const state = await storage.getGameState();
+    if (!state) {
+      return res.status(404).json({ message: "No active game state found" });
+    }
+    res.json(state);
+  });
+
+  return httpServer;
+}
+```
+
+### **Step 2: Fix the Storage (The Memory Bank)**
+
+Now open `server/storage.ts`.
+It needs the logic to actually hold that data in RAM. **Replace the entire file** with this:
+
+**File:** `server/storage.ts`
+
+```typescript
+import { type User, type InsertUser, type GameState } from "@shared/schema";
+import { randomUUID } from "crypto";
+
+export interface IStorage {
+  getUser(id: string): Promise<User | undefined>;
+  getUserByUsername(username: string): Promise<User | undefined>;
+  createUser(user: InsertUser): Promise<User>;
+  // New methods for Game State
+  getGameState(): Promise<GameState | undefined>;
+  updateGameState(state: GameState): Promise<GameState>;
+}
+
+export class MemStorage implements IStorage {
+  private users: Map<string, User>;
+  private currentState: GameState | undefined; // This holds your live game data
+
+  constructor() {
+    this.users = new Map();
+    this.currentState = undefined;
+  }
+
+  async getUser(id: string): Promise<User | undefined> {
+    return this.users.get(id);
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(
+      (user) => user.username === username,
+    );
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const id = randomUUID();
+    const user: User = { ...insertUser, id };
+    this.users.set(id, user);
+    return user;
+  }
+
+  // --- NEW IMPLEMENTATION ---
+  async getGameState(): Promise<GameState | undefined> {
+    return this.currentState;
+  }
+
+  async updateGameState(state: GameState): Promise<GameState> {
+    this.currentState = state;
+    return state;
+  }
+}
+
+export const storage = new MemStorage();
+```
+
+### **Step 3: Verify It Works**
+
+1.  **Stop and Restart** your Replit (click the Stop button, then Run).
+2.  Wait for the console to say "Server started" or similar.
+3.  Go to your PC and play **one turn** in Civ 6.
+4.  Look at the **Replit Console** (bottom right of the web editor).
+      * You should see: `📥 Receiving Game State from Bridge...`
+      * Then: `✅ Game State Updated: Turn X (Your Leader)`
+
+If you see that checkmark in the Replit console, refresh your dashboard webpage. It will now show your live data.

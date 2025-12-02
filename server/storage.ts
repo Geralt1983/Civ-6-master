@@ -1,26 +1,26 @@
-import { db } from "./db";
-import { gameStates, type InsertGameState, type GameState } from "@shared/schema";
-import { desc } from "drizzle-orm";
+import { type GameState } from "@shared/schema";
+import { randomUUID } from "crypto";
 
 export interface IStorage {
-  upsertGameState(state: InsertGameState): Promise<GameState>;
-  getLatestGameState(): Promise<GameState | undefined>;
+  getGameState(): Promise<GameState | undefined>;
+  updateGameState(state: GameState): Promise<GameState>;
 }
 
-export class DatabaseStorage implements IStorage {
-  async upsertGameState(state: InsertGameState): Promise<GameState> {
-    const [result] = await db.insert(gameStates).values([state]).returning();
-    return result;
+export class MemStorage implements IStorage {
+  private currentState: GameState | undefined;
+
+  constructor() {
+    this.currentState = undefined;
   }
 
-  async getLatestGameState(): Promise<GameState | undefined> {
-    const [result] = await db
-      .select()
-      .from(gameStates)
-      .orderBy(desc(gameStates.updatedAt))
-      .limit(1);
-    return result;
+  async getGameState(): Promise<GameState | undefined> {
+    return this.currentState;
+  }
+
+  async updateGameState(state: GameState): Promise<GameState> {
+    this.currentState = state;
+    return state;
   }
 }
 
-export const storage = new DatabaseStorage();
+export const storage = new MemStorage();
