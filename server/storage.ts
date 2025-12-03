@@ -1,13 +1,14 @@
 import { type GameState } from "@shared/schema";
-import { randomUUID } from "crypto";
 
 export interface IStorage {
   getGameState(): Promise<GameState | undefined>;
   updateGameState(state: GameState): Promise<GameState>;
+  getHistory(): Promise<GameState[]>;
 }
 
 export class MemStorage implements IStorage {
   private currentState: GameState | undefined;
+  private history: GameState[] = [];
 
   constructor() {
     this.currentState = undefined;
@@ -19,7 +20,13 @@ export class MemStorage implements IStorage {
 
   async updateGameState(state: GameState): Promise<GameState> {
     this.currentState = state;
+    this.history.push(state);
+    if (this.history.length > 50) this.history.shift();
     return state;
+  }
+
+  async getHistory(): Promise<GameState[]> {
+    return this.history;
   }
 }
 

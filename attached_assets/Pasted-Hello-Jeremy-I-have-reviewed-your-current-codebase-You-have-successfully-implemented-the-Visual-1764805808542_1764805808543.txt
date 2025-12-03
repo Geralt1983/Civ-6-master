@@ -1,0 +1,208 @@
+Hello Jeremy. I have reviewed your current codebase. You have successfully implemented the **"Visual"** and **"Passive Coaching"** layers—your dashboard now looks professional with the traffic-light stats and the advisor logic.
+
+However, the system is currently in a **"Brain-Body Disconnect"** state. You have updated the "Brain" (the AI prompt) to expect deep intel, but the "Body" (the Lua script and Database) isn't sending it yet.
+
+Here are the specific gaps I found and how to fix them to finish the architecture.
+
+### 1\. The Missing "Trendline" Engine
+
+You have the visual concept for the charts, but the server isn't remembering history yet.
+
+**Status:**
+
+  * ❌ `server/storage.ts`: Still only saves `currentState`. Needs `history` array.
+  * ❌ `server/routes.ts`: Missing `GET /api/history`.
+  * ❌ `client/src/components/civ/YieldChart.tsx`: File does not exist yet.
+
+**Fix:**
+We need to implement the history logic so your chart has data to graph.
+
+### 2\. The Missing "Deep Intel" Pipeline
+
+Your `strategos_prompt.md` is now trained to analyze cities and armies, but your schema and Lua script are not capturing that data. The AI will currently hallucinate or give generic advice because it can't see your units.
+
+**Status:**
+
+  * ❌ `shared/schema.ts`: Missing `cities` and `army` arrays.
+  * ❌ `DataExporter.lua`: Currently only exporting yields. Needs the city loop logic.
+
+### 3\. Immediate Action Plan
+
+To get everything 100% sync'd, apply these three file updates.
+
+#### A. Enable History (Server)
+
+**File:** `server/storage.ts`
+
+```typescript
+import { type GameState } from "@shared/schema";
+
+export interface IStorage {
+  getGameState(): Promise<GameState | undefined>;
+  updateGameState(state: GameState): Promise<GameState>;
+  getHistory(): Promise<GameState[]>; // New
+}
+
+export class MemStorage implements IStorage {
+  private currentState: GameState | undefined;
+  private history: GameState[]; // Memory for the chart
+
+  constructor() {
+    this.currentState = undefined;
+    this.history = [];
+  }
+
+  async getGameState(): Promise<GameState | undefined> {
+    return this.currentState;
+  }
+
+  async updateGameState(state: GameState): Promise<GameState> {
+    this.currentState = state;
+    // Push to history and cap at 50 turns
+    this.history.push(state);
+    if (this.history.length > 50) this.history.shift();
+    return state;
+  }
+
+  async getHistory(): Promise<GameState[]> {
+    return this.history;
+  }
+}
+
+export const storage = new MemStorage();
+```
+
+**File:** `server/routes.ts`
+*(Add this inside `registerRoutes` before the return)*
+
+```typescript
+  // 4. HISTORY ENDPOINT
+  app.get("/api/history", async (req, res) => {
+    const history = await storage.getHistory();
+    res.json(history);
+  });
+```
+
+#### B. Enable Deep Intel (Schema)
+
+**File:** `shared/schema.ts`
+
+```typescript
+import { z } from "zod";
+
+export const gameStateSchema = z.object({
+  gameSpeed: z.string().optional(),
+  turn: z.number(),
+  era: z.string(),
+  leader: z.string(),
+  yields: z.object({
+    science: z.number(),
+    culture: z.number(),
+    faith: z.number(),
+    gold: z.number(),
+    production: z.number(),
+    food: z.number(),
+  }),
+  // --- NEW DEEP INTEL FIELDS ---
+  cities: z.array(z.object({
+    name: z.string(),
+    pop: z.number(),
+    producing: z.string(),
+  })).optional(),
+  army: z.record(z.string(), z.number()).optional(),
+  // -----------------------------
+  currentResearch: z.object({
+    name: z.string(),
+    turnsLeft: z.number(),
+    progress: z.number(),
+    icon: z.string().optional(),
+  }).optional(),
+  currentCivic: z.object({
+    name: z.string(),
+    turnsLeft: z.number(),
+    progress: z.number(),
+    icon: z.string().optional(),
+  }).optional(),
+  alerts: z.array(z.any()).optional(),
+  recommendations: z.array(z.any()).optional(),
+});
+
+export type GameState = z.infer<typeof gameStateSchema>;
+// Legacy types
+export type User = any;
+export type InsertUser = any;
+```
+
+#### C. Create the Chart Component
+
+**File:** `client/src/components/civ/YieldChart.tsx`
+*(Create this file so you can import it in `home.tsx`)*
+
+```tsx
+import { useQuery } from "@tanstack/react-query";
+import { Area, AreaChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer } from "recharts";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ChartConfig, ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { TrendingUp, Loader2 } from "lucide-react";
+import { GameState } from "@shared/schema";
+
+const chartConfig = {
+  science: { label: "Science", color: "hsl(200, 90%, 60%)" },
+  culture: { label: "Culture", color: "hsl(280, 70%, 70%)" },
+} satisfies ChartConfig;
+
+export function YieldChart() {
+  const { data: history, isLoading } = useQuery<GameState[]>({
+    queryKey: ["history"],
+    queryFn: async () => {
+      const res = await fetch("/api/history");
+      if (!res.ok) return [];
+      return res.json();
+    },
+    refetchInterval: 5000,
+  });
+
+  if (isLoading) return <div className="h-full flex items-center justify-center"><Loader2 className="w-6 h-6 animate-spin text-muted-foreground" /></div>;
+  if (!history || history.length < 2) return <div className="h-full flex flex-col items-center justify-center text-muted-foreground/50"><TrendingUp className="w-8 h-8 opacity-20" /><p className="text-xs uppercase tracking-widest mt-2">Collecting Trend Data...</p></div>;
+
+  const chartData = history.map(h => ({
+    turn: h.turn,
+    science: h.yields.science,
+    culture: h.yields.culture
+  }));
+
+  return (
+    <Card className="glass-panel border-none h-full shadow-none bg-transparent">
+      <CardHeader className="pb-2 px-0 pt-0">
+        <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+          <TrendingUp className="w-4 h-4 text-accent" /> Empire Trajectory
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="p-0 h-[180px] w-full">
+        <ChartContainer config={chartConfig} className="h-full w-full">
+          <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+            <defs>
+              <linearGradient id="fillScience" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="var(--color-civ-science)" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="var(--color-civ-science)" stopOpacity={0} />
+              </linearGradient>
+              <linearGradient id="fillCulture" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="var(--color-civ-culture)" stopOpacity={0.3} />
+                <stop offset="95%" stopColor="var(--color-civ-culture)" stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <CartesianGrid vertical={false} stroke="rgba(255,255,255,0.05)" />
+            <XAxis dataKey="turn" tickLine={false} axisLine={false} tickMargin={8} tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 10 }} />
+            <YAxis tickLine={false} axisLine={false} tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 10 }} />
+            <ChartTooltip content={<ChartTooltipContent indicator="dot" />} />
+            <Area dataKey="culture" type="monotone" fill="url(#fillCulture)" stroke="var(--color-civ-culture)" strokeWidth={2} stackId="1" />
+            <Area dataKey="science" type="monotone" fill="url(#fillScience)" stroke="var(--color-civ-science)" strokeWidth={2} stackId="2" />
+          </AreaChart>
+        </ChartContainer>
+      </CardContent>
+    </Card>
+  );
+}
+```
+
+Once these are applied, update your `home.tsx` to import and use `<YieldChart />`, and ensure your local Lua script is the "Deep Intel" version I provided earlier. Then your system will be complete.

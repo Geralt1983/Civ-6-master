@@ -4,6 +4,7 @@ import { StatCard } from "@/components/civ/StatCard";
 import { ActionList } from "@/components/civ/ActionList";
 import { AnalysisPanel } from "@/components/civ/AnalysisPanel";
 import { StrategosPanel, StrategosAdvice } from "@/components/civ/StrategosPanel";
+import { YieldChart } from "@/components/civ/YieldChart";
 import { Beaker, Music, Anchor, Coins, Hammer, Wheat, Menu, Settings, User, Wifi, WifiOff, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { generateAdvice } from "@/lib/advisor";
@@ -256,8 +257,9 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Right Column: Recommendations */}
-        <div className="col-span-3 h-full pb-6 overflow-hidden">
+        {/* Right Column: Chart & Recommendations */}
+        <div className="col-span-3 h-full pb-6 overflow-y-auto custom-scrollbar flex flex-col gap-6">
+          <YieldChart />
           <ActionList recommendations={state.recommendations || []} />
         </div>
       </main>

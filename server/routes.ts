@@ -79,5 +79,11 @@ export async function registerRoutes(
     }
   });
 
+  // 4. HISTORY ENDPOINT
+  app.get("/api/history", async (req, res) => {
+    const history = await storage.getHistory();
+    res.json(history);
+  });
+
   return httpServer;
 }
