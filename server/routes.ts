@@ -21,12 +21,16 @@ export async function registerRoutes(
   // 1. RECEIVE DATA (From your PC)
   app.post("/api/gamestate", async (req, res) => {
     console.log("📥 Receiving Game State from Bridge...");
+    console.log("   Body keys:", Object.keys(req.body));
+    console.log("   Turn:", req.body.turn);
+    console.log("   Cities:", req.body.cities?.length || 0);
+    console.log("   Army units:", Object.keys(req.body.army || {}).length);
     
     // Parse the incoming data to make sure it's valid
     const result = gameStateSchema.safeParse(req.body);
     if (!result.success) {
-      console.error("❌ Invalid Data:", result.error);
-      return res.status(400).json({ error: "Invalid game state data" });
+      console.error("❌ Invalid Data:", result.error.errors);
+      return res.status(400).json({ error: "Invalid game state data", details: result.error.errors });
     }
     
     // Save to Memory
