@@ -1,4 +1,4 @@
--- DataExporter.lua v3 - Phase 3: Deep Intel Version
+-- DataExporter.lua v3 - Phase 3: Deep Intel Version (FIXED JSON)
 function OnTurnBegin()
     local iPlayer = Game.GetLocalPlayer()
     if not iPlayer or iPlayer == -1 then return end
@@ -53,7 +53,7 @@ function OnTurnBegin()
         if pReligion then faith = math.floor(pReligion:GetFaithYield()) end
     end)
 
-    -- CITY YIELDS AND PRODUCTION DATA (NEW)
+    -- CITY YIELDS AND PRODUCTION DATA
     local totalProd = 0
     local totalFood = 0
     local citiesData = {}
@@ -66,7 +66,6 @@ function OnTurnBegin()
                     totalFood = totalFood + pCity:GetYield(0)
                     totalProd = totalProd + pCity:GetYield(1)
                     
-                    -- Get what the city is currently producing
                     local currentProduction = "Nothing"
                     pcall(function()
                         local buildQueue = pCity:GetBuildQueue()
@@ -79,8 +78,8 @@ function OnTurnBegin()
                         end
                     end)
                     
-                    local safeName = tostring(pCity:GetName() or "City"):gsub("'", "")
-                    local safeProd = tostring(currentProduction):gsub("'", "")
+                    local safeName = tostring(pCity:GetName() or "City"):gsub('"', ""):gsub('\\', "")
+                    local safeProd = tostring(currentProduction):gsub('"', ""):gsub('\\', "")
                     table.insert(citiesData, {
                         name = safeName,
                         pop = pCity:GetPopulation(),
@@ -91,7 +90,7 @@ function OnTurnBegin()
         end
     end)
 
-    -- ARMY COMPOSITION (NEW)
+    -- ARMY COMPOSITION
     local unitSummary = {}
     pcall(function()
         local units = pPlayer:GetUnits()
@@ -169,50 +168,50 @@ function OnTurnBegin()
         end
     end)
 
-    -- BUILD JSON
-    local json = "CIV_DATA_DUMP::{"
-    json = json .. "'gameSpeed':'" .. tostring(gameSpeed) .. "',"
-    json = json .. "'turn':" .. tostring(Game.GetCurrentGameTurn()) .. ","
-    json = json .. "'era':'" .. tostring(eraName) .. "',"
-    json = json .. "'leader':'" .. tostring(leaderName) .. "',"
-    json = json .. "'yields':{"
-        json = json .. "'science':" .. tostring(science) .. ","
-        json = json .. "'culture':" .. tostring(culture) .. ","
-        json = json .. "'faith':" .. tostring(faith) .. ","
-        json = json .. "'gold':" .. tostring(gold) .. ","
-        json = json .. "'production':" .. tostring(totalProd) .. ","
-        json = json .. "'food':" .. tostring(totalFood)
-    json = json .. "},"
+    -- BUILD PROPER JSON (double quotes for eval())
+    local json = 'CIV_DATA_DUMP::{"gameSpeed":"' .. tostring(gameSpeed) .. '"'
+    json = json .. ',"turn":' .. tostring(Game.GetCurrentGameTurn())
+    json = json .. ',"era":"' .. tostring(eraName) .. '"'
+    json = json .. ',"leader":"' .. tostring(leaderName) .. '"'
+    json = json .. ',"yields":{'
+        json = json .. '"science":' .. tostring(science)
+        json = json .. ',"culture":' .. tostring(culture)
+        json = json .. ',"faith":' .. tostring(faith)
+        json = json .. ',"gold":' .. tostring(gold)
+        json = json .. ',"production":' .. tostring(totalProd)
+        json = json .. ',"food":' .. tostring(totalFood)
+    json = json .. '}'
     
-    -- Serialize Cities Array (NEW)
-    json = json .. "'cities':["
+    -- Serialize Cities Array
+    json = json .. ',"cities":['
     for i, c in ipairs(citiesData) do
-        json = json .. "{'name':'" .. c.name .. "','pop':" .. c.pop .. ",'producing':'" .. c.producing .. "'}"
-        if i < #citiesData then json = json .. "," end
+        json = json .. '{"name":"' .. c.name .. '","pop":' .. c.pop .. ',"producing":"' .. c.producing .. '"}'
+        if i < #citiesData then json = json .. ',' end
     end
-    json = json .. "],"
+    json = json .. ']'
     
-    -- Serialize Army Object (NEW)
-    json = json .. "'army':{"
+    -- Serialize Army Object
+    json = json .. ',"army":{'
     local isFirst = true
     for k, v in pairs(unitSummary) do
-        if not isFirst then json = json .. "," end
-        json = json .. "'" .. k .. "':" .. v
+        if not isFirst then json = json .. ',' end
+        local safeKey = tostring(k):gsub('"', ""):gsub('\\', "")
+        json = json .. '"' .. safeKey .. '":' .. v
         isFirst = false
     end
-    json = json .. "},"
+    json = json .. '}'
     
-    json = json .. "'currentResearch':{"
-        json = json .. "'name':'" .. tostring(techName) .. "',"
-        json = json .. "'progress':" .. tostring(techProgress) .. ","
-        json = json .. "'turnsLeft':" .. tostring(techTurns)
-    json = json .. "},"
-    json = json .. "'currentCivic':{"
-        json = json .. "'name':'" .. tostring(civicName) .. "',"
-        json = json .. "'progress':" .. tostring(civicProgress) .. ","
-        json = json .. "'turnsLeft':" .. tostring(civicTurns)
-    json = json .. "}"
-    json = json .. "}"
+    json = json .. ',"currentResearch":{'
+        json = json .. '"name":"' .. tostring(techName) .. '"'
+        json = json .. ',"progress":' .. tostring(techProgress)
+        json = json .. ',"turnsLeft":' .. tostring(techTurns)
+    json = json .. '}'
+    json = json .. ',"currentCivic":{'
+        json = json .. '"name":"' .. tostring(civicName) .. '"'
+        json = json .. ',"progress":' .. tostring(civicProgress)
+        json = json .. ',"turnsLeft":' .. tostring(civicTurns)
+    json = json .. '}'
+    json = json .. '}'
 
     print(json)
 end
