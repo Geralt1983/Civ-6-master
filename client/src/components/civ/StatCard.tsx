@@ -8,11 +8,22 @@ interface StatCardProps {
   colorClass: string; // e.g., "text-science"
   subtext?: string;
   trend?: 'up' | 'down' | 'neutral';
+  status?: 'critical' | 'warning' | 'good' | 'neutral'; // New Prop
 }
 
-export function StatCard({ label, value, icon: Icon, colorClass, subtext, trend }: StatCardProps) {
+export function StatCard({ label, value, icon: Icon, colorClass, subtext, trend, status = 'neutral' }: StatCardProps) {
+  const statusStyles = {
+    critical: "border-red-500/50 bg-red-500/5",
+    warning: "border-yellow-500/50 bg-yellow-500/5",
+    good: "border-green-500/50 bg-green-500/5",
+    neutral: "border-white/5 hover:bg-white/5"
+  };
+
   return (
-    <div className="glass-panel p-4 rounded-lg flex items-center justify-between group hover:bg-white/5 transition-colors">
+    <div className={cn(
+      "glass-panel p-4 rounded-lg flex items-center justify-between group transition-all duration-300",
+      statusStyles[status]
+    )}>
       <div>
         <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold mb-1">{label}</p>
         <div className="flex items-baseline gap-2">

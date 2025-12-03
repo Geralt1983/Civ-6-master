@@ -7,6 +7,7 @@ import { StrategosPanel, StrategosAdvice } from "@/components/civ/StrategosPanel
 import { Beaker, Music, Anchor, Coins, Hammer, Wheat, Menu, Settings, User, Wifi, WifiOff, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { generateAdvice } from "@/lib/advisor";
+import { BENCHMARKS } from "@/lib/strategyDb";
 import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import generatedImage from '@assets/generated_images/a_dark,_textured_hex_map_background_for_a_strategy_game_interface.png';
@@ -87,6 +88,19 @@ export default function Dashboard() {
   };
 
   const isConnected = !!serverState;
+
+  // Calculate status vs benchmarks (traffic light system)
+  const normalizedTurn = state.gameSpeed === "GAMESPEED_STANDARD" ? state.turn / 2 : 
+                         state.gameSpeed === "GAMESPEED_EPIC" ? state.turn / 3 :
+                         state.gameSpeed === "GAMESPEED_MARATHON" ? state.turn / 6 : state.turn;
+  
+  const target = BENCHMARKS.find(b => normalizedTurn <= b.turn) || BENCHMARKS[BENCHMARKS.length - 1];
+  
+  const getStatus = (current: number, goal: number) => {
+    if (current >= goal) return 'good';
+    if (current >= goal * 0.8) return 'warning';
+    return 'critical';
+  };
 
   const handleAskStrategos = () => {
     setStrategosError(null);
@@ -176,12 +190,12 @@ export default function Dashboard() {
         <div className="col-span-3 flex flex-col gap-6 h-full overflow-y-auto custom-scrollbar pb-20">
           {/* Yields Grid */}
           <div className="grid grid-cols-1 gap-3">
-            <StatCard label="Science" value={`+${state.yields.science.toFixed(1)}`} icon={Beaker} colorClass="text-science" />
-            <StatCard label="Culture" value={`+${state.yields.culture.toFixed(1)}`} icon={Music} colorClass="text-culture" />
-            <StatCard label="Faith" value={`+${state.yields.faith.toFixed(1)}`} icon={Anchor} colorClass="text-faith" />
-            <StatCard label="Gold" value={`+${state.yields.gold.toFixed(1)}`} icon={Coins} colorClass="text-gold" />
-            <StatCard label="Production" value={state.yields.production} icon={Hammer} colorClass="text-prod" />
-            <StatCard label="Food" value={state.yields.food} icon={Wheat} colorClass="text-food" />
+            <StatCard label="Science" value={`+${state.yields.science.toFixed(1)}`} icon={Beaker} colorClass="text-science" status={getStatus(state.yields.science, target.metrics.science)} data-testid="card-science" />
+            <StatCard label="Culture" value={`+${state.yields.culture.toFixed(1)}`} icon={Music} colorClass="text-culture" status={getStatus(state.yields.culture, target.metrics.culture)} data-testid="card-culture" />
+            <StatCard label="Faith" value={`+${state.yields.faith.toFixed(1)}`} icon={Anchor} colorClass="text-faith" data-testid="card-faith" />
+            <StatCard label="Gold" value={`+${state.yields.gold.toFixed(1)}`} icon={Coins} colorClass="text-gold" data-testid="card-gold" />
+            <StatCard label="Production" value={state.yields.production} icon={Hammer} colorClass="text-prod" status={getStatus(state.yields.production, target.metrics.production)} data-testid="card-production" />
+            <StatCard label="Food" value={state.yields.food} icon={Wheat} colorClass="text-food" data-testid="card-food" />
           </div>
         </div>
 
@@ -198,42 +212,44 @@ export default function Dashboard() {
           
           <AnalysisPanel alerts={state.alerts || []} />
           
-          {/* Current Progress Cards */}
+          {/* Current Progress Cards with Ghost Bars */}
           <div className="grid grid-cols-2 gap-6">
-            <div className="glass-panel p-5 rounded-lg flex flex-col justify-between border-t-2 border-t-science/50">
-              <div className="flex justify-between items-start">
+            <div className="glass-panel p-5 rounded-lg flex flex-col justify-between border-t-2 border-t-science/50 relative overflow-hidden">
+              <div className="flex justify-between items-start relative z-10">
                 <div>
                   <span className="text-xs font-bold tracking-widest text-science uppercase">Researching</span>
                   <h3 className="font-serif text-xl mt-1" data-testid="text-research">{state.currentResearch?.name || "None"}</h3>
                 </div>
                 <Beaker className="text-science opacity-50" />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-2 relative z-10">
                 <div className="flex justify-between text-xs text-muted-foreground">
                   <span>{state.currentResearch?.turnsLeft || 0} Turns Left</span>
                   <span>{state.currentResearch?.progress || 0}%</span>
                 </div>
-                <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
-                  <div className="h-full bg-science transition-all duration-500" style={{ width: `${state.currentResearch?.progress || 0}%` }} />
+                <div className="h-1.5 bg-white/10 rounded-full overflow-hidden relative">
+                  <div className="absolute inset-0 bg-science/20 rounded-full" style={{ width: '100%' }} />
+                  <div className="h-full bg-science transition-all duration-500 relative z-10" style={{ width: `${state.currentResearch?.progress || 0}%` }} />
                 </div>
               </div>
             </div>
 
-            <div className="glass-panel p-5 rounded-lg flex flex-col justify-between border-t-2 border-t-culture/50">
-              <div className="flex justify-between items-start">
+            <div className="glass-panel p-5 rounded-lg flex flex-col justify-between border-t-2 border-t-culture/50 relative overflow-hidden">
+              <div className="flex justify-between items-start relative z-10">
                 <div>
                   <span className="text-xs font-bold tracking-widest text-culture uppercase">Civic</span>
                   <h3 className="font-serif text-xl mt-1" data-testid="text-civic">{state.currentCivic?.name || "None"}</h3>
                 </div>
                 <Music className="text-culture opacity-50" />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-2 relative z-10">
                 <div className="flex justify-between text-xs text-muted-foreground">
                   <span>{state.currentCivic?.turnsLeft || 0} Turns Left</span>
                   <span>{state.currentCivic?.progress || 0}%</span>
                 </div>
-                <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
-                  <div className="h-full bg-culture transition-all duration-500" style={{ width: `${state.currentCivic?.progress || 0}%` }} />
+                <div className="h-1.5 bg-white/10 rounded-full overflow-hidden relative">
+                  <div className="absolute inset-0 bg-culture/20 rounded-full" style={{ width: '100%' }} />
+                  <div className="h-full bg-culture transition-all duration-500 relative z-10" style={{ width: `${state.currentCivic?.progress || 0}%` }} />
                 </div>
               </div>
             </div>
