@@ -37,67 +37,57 @@ const tail = new Tail(luaLogPath, {
     }
 });
 
-let lastPostTime = 0;
+let debounceTimer = null;
+let lastGameData = null;
+
+const sendData = (gameData) => {
+    console.log('[POSTING] Turn', gameData.turn);
+    const postData = JSON.stringify(gameData);
+    
+    const options = {
+        hostname: 'civ-sage-ai--jkimble1983.replit.app',
+        path: '/api/gamestate',
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength(postData)
+        }
+    };
+    
+    const req = https.request(options, (res) => {
+        if (res.statusCode === 200) console.log('[SUCCESS] Dashboard updated');
+        else console.log(`[ERROR] Server returned ${res.statusCode}`);
+    });
+    
+    req.on('error', (e) => console.error('[ERROR] Request failed:', e.message));
+    req.write(postData);
+    req.end();
+};
 
 tail.on('line', (line) => {
-    // Check if line contains the marker
     if (line.includes('CIV_DATA_DUMP::')) {
-        console.log('[DETECTED] Game data in line');
-        
-        // Extract JSON
         const startIdx = line.indexOf('{');
         const endIdx = line.lastIndexOf('}') + 1;
         
-        if (startIdx === -1 || endIdx <= startIdx) {
-            console.error('[ERROR] Could not find JSON braces');
-            return;
-        }
-        
-        const jsonStr = line.substring(startIdx, endIdx);
-        
-        try {
-            // Parse as object (Lua table format)
-            const gameData = eval('(' + jsonStr + ')');
-            
-            // Throttle posts - don't spam
-            const now = Date.now();
-            if (now - lastPostTime < 500) {
-                console.log('[SKIP] Too many posts, throttling');
-                return;
+        if (startIdx !== -1 && endIdx > startIdx) {
+            const jsonStr = line.substring(startIdx, endIdx);
+            try {
+                // Parse and debounce
+                const gameData = eval('(' + jsonStr + ')');
+                lastGameData = gameData;
+                
+                // Clear previous timer if exists
+                if (debounceTimer) clearTimeout(debounceTimer);
+                
+                // Wait 2 seconds of silence before sending (prevents false positives)
+                debounceTimer = setTimeout(() => {
+                    sendData(lastGameData);
+                }, 2000);
+                
+                console.log('[DETECTED] Data buffered, waiting 2s...');
+            } catch (e) {
+                console.error('[ERROR] Failed to parse JSON:', e.message);
             }
-            lastPostTime = now;
-            
-            const postData = JSON.stringify(gameData);
-            console.log('[POSTING] Turn', gameData.turn);
-            
-            const options = {
-                hostname: 'civ-sage-ai--jkimble1983.replit.app',
-                path: '/api/gamestate',
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Content-Length': Buffer.byteLength(postData)
-                }
-            };
-            
-            const req = https.request(options, (res) => {
-                if (res.statusCode === 200) {
-                    console.log('[SUCCESS] Dashboard updated');
-                } else {
-                    console.log(`[ERROR] Server returned ${res.statusCode}`);
-                }
-            });
-            
-            req.on('error', (e) => {
-                console.error('[ERROR] Request failed:', e.message);
-            });
-            
-            req.write(postData);
-            req.end();
-            
-        } catch (e) {
-            console.error('[ERROR] Failed to parse JSON:', e.message);
-            console.error('[DEBUG] JSON string:', jsonStr.substring(0, 100));
         }
     }
 });
@@ -108,6 +98,7 @@ tail.on('error', (err) => {
 
 process.on('SIGINT', () => {
     console.log('\n\nBridge shutting down...');
+    if (debounceTimer) clearTimeout(debounceTimer);
     tail.unwatch();
     process.exit(0);
 });

@@ -1,4 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import type { GameState } from "@/lib/mockData";
 
@@ -6,60 +6,56 @@ export function useGameState() {
   const queryClient = useQueryClient();
   const wsRef = useRef<WebSocket | null>(null);
 
-  // Fetch latest game state
-  const { data: gameState, isLoading } = useQuery<GameState>({
-    queryKey: ["gameState"],
+  // Restore from LocalStorage on load (session resilience)
+  useEffect(() => {
+    const saved = localStorage.getItem("civ6_gamestate");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        queryClient.setQueryData(["gamestate"], parsed);
+      } catch (e) { console.error("Failed to load cached state"); }
+    }
+  }, [queryClient]);
+
+  const { data: gameState, isLoading } = useQuery<GameState | null>({
+    queryKey: ["gamestate"],
     queryFn: async () => {
-      const response = await fetch("/api/gamestate");
-      if (!response.ok) {
-        if (response.status === 404) {
-          return null;
-        }
-        throw new Error("Failed to fetch game state");
-      }
-      return response.json();
+      const response = await fetch("/api/gamestate", {
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache" }
+      });
+      if (response.status === 404) return null;
+      if (!response.ok) throw new Error("Failed to fetch game state");
+      const data = await response.json();
+      // Cache valid server response
+      localStorage.setItem("civ6_gamestate", JSON.stringify(data));
+      return data;
     },
-    refetchInterval: 5000, // Fallback polling every 5s
+    refetchInterval: 3000,
+    staleTime: 1000,
   });
 
-  // WebSocket connection for real-time updates
   useEffect(() => {
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const wsUrl = `${protocol}//${window.location.host}/ws`;
-    
     const ws = new WebSocket(wsUrl);
     wsRef.current = ws;
-
-    ws.onopen = () => {
-      console.log("WebSocket connected");
-    };
 
     ws.onmessage = (event) => {
       try {
         const message = JSON.parse(event.data);
         if (message.type === "gamestate") {
-          queryClient.setQueryData(["gameState"], message.data);
+          queryClient.setQueryData(["gamestate"], message.data);
+          // Cache WebSocket updates for session resilience
+          localStorage.setItem("civ6_gamestate", JSON.stringify(message.data));
         }
       } catch (error) {
         console.error("Error parsing WebSocket message:", error);
       }
     };
 
-    ws.onerror = (error) => {
-      console.error("WebSocket error:", error);
-    };
-
-    ws.onclose = () => {
-      console.log("WebSocket disconnected");
-    };
-
-    return () => {
-      ws.close();
-    };
+    return () => ws.close();
   }, [queryClient]);
 
-  return {
-    gameState,
-    isLoading,
-  };
+  return { gameState, isLoading };
 }
