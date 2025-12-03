@@ -13,6 +13,12 @@ export const gameStateSchema = z.object({
     production: z.number(),
     food: z.number(),
   }),
+  cities: z.array(z.object({
+    name: z.string(),
+    pop: z.number(),
+    producing: z.string(),
+  })).optional(),
+  army: z.record(z.string(), z.number()).optional(),
   currentResearch: z.object({
     name: z.string(),
     turnsLeft: z.number(),
@@ -42,6 +48,5 @@ export const gameStateSchema = z.object({
 
 export type GameState = z.infer<typeof gameStateSchema>;
 
-// Legacy types for compatibility
 export type User = any;
 export type InsertUser = any;

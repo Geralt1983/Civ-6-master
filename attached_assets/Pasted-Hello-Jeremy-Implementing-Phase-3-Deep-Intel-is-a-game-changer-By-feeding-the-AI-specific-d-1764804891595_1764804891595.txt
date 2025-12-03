@@ -1,0 +1,278 @@
+Hello Jeremy. Implementing **Phase 3: "Deep Intel"** is a game-changer. By feeding the AI specific data about your cities and army, it stops guessing and starts commanding like a true general.
+
+Here is the complete code to unlock this capability.
+
+### 1\. The Eyes: Update the Lua Script
+
+We need to extract City builds, Population, and Unit counts.
+
+**Action:** Replace your `DataExporter.lua` (or `DataExporter_FIXED.lua`) on your PC with this enhanced version.
+
+**File:** `DataExporter.lua`
+
+```lua
+-- DataExporter.lua - Phase 3: Deep Intel Version
+function OnTurnBegin()
+    local iPlayer = Game.GetLocalPlayer()
+    if (iPlayer == -1) then return end
+    
+    local pPlayer = Players[iPlayer]
+    if not pPlayer then return end
+    
+    local pPlayerConfig = PlayerConfigurations[iPlayer]
+
+    -- 1. MACRO DATA
+    local speedTypeId = GameConfiguration.GetGameSpeedType()
+    local gameSpeed = GameInfo.GameSpeeds[speedTypeId].GameSpeedType or "GAMESPEED_STANDARD"
+    local eraIndex = pPlayer:GetEra()
+    local eraName = GameInfo.Eras[eraIndex].Name or "Ancient Era"
+
+    -- 2. YIELDS
+    local science = math.floor(pPlayer:GetTechs():GetScienceYield())
+    local culture = math.floor(pPlayer:GetCulture():GetCultureYield())
+    local gold = math.floor(pPlayer:GetTreasury():GetGoldBalance())
+    local faith = math.floor(pPlayer:GetReligion():GetFaithYield())
+
+    -- 3. CITIES & PRODUCTION (NEW)
+    local totalProd = 0
+    local totalFood = 0
+    local citiesData = {}
+    local pCities = pPlayer:GetCities()
+    
+    if pCities then
+        for i, pCity in pCities:Members() do
+            totalFood = totalFood + pCity:GetYield(0)
+            totalProd = totalProd + pCity:GetYield(1)
+            
+            -- Get what the city is currently producing
+            local buildQueue = pCity:GetBuildQueue()
+            local currentProduction = "Nothing"
+            local hash = buildQueue:GetCurrentProductionTypeHash()
+            
+            -- Try to resolve hash to Unit, Building, or District
+            if hash ~= 0 then
+                local info = GameInfo.Units[hash] or GameInfo.Buildings[hash] or GameInfo.Districts[hash] or GameInfo.Projects[hash]
+                if info then currentProduction = info.Name end
+            end
+
+            table.insert(citiesData, {
+                name = pCity:GetName(),
+                pop = pCity:GetPopulation(),
+                prod = currentProduction
+            })
+        end
+    end
+
+    -- 4. ARMY COMPOSITION (NEW)
+    local unitSummary = {}
+    local pUnits = pPlayer:GetUnits()
+    if pUnits then
+        for i, unit in pUnits:Members() do
+            local unitType = unit:GetUnitType()
+            local unitInfo = GameInfo.Units[unitType]
+            if unitInfo then
+                local name = unitInfo.Name
+                unitSummary[name] = (unitSummary[name] or 0) + 1
+            end
+        end
+    end
+
+    -- 5. RESEARCH
+    local pTechs = pPlayer:GetTechs()
+    local currentTechID = pTechs:GetResearchingTech()
+    local techName = "None"
+    local techProgress = 0
+    local techTurns = 0
+    
+    if (currentTechID ~= -1) then
+        local techInfo = GameInfo.Technologies[currentTechID]
+        if techInfo then techName = techInfo.Name end
+        local cost = pTechs:GetResearchCost(currentTechID)
+        local current = pTechs:GetResearchProgress(currentTechID)
+        if cost > 0 then techProgress = math.floor((current / cost) * 100) end
+        if science > 0 then techTurns = math.ceil((cost - current) / science) end
+    end
+
+    -- 6. CIVIC
+    local pCulture = pPlayer:GetCulture()
+    local currentCivicID = pCulture:GetProgressingCivic()
+    local civicName = "None"
+    local civicProgress = 0
+    local civicTurns = 0
+
+    if (currentCivicID ~= -1) then
+        local civicInfo = GameInfo.Civics[currentCivicID]
+        if civicInfo then civicName = civicInfo.Name end
+        local cost = pCulture:GetCultureCost(currentCivicID)
+        local current = pCulture:GetCulturalProgress(currentCivicID)
+        if cost > 0 then civicProgress = math.floor((current / cost) * 100) end
+        if culture > 0 then civicTurns = math.ceil((cost - current) / culture) end
+    end
+
+    -- 7. BUILD JSON
+    local json = "CIV_DATA_DUMP::{"
+    json = json .. "'gameSpeed':'" .. gameSpeed .. "',"
+    json = json .. "'turn':" .. Game.GetCurrentGameTurn() .. ","
+    json = json .. "'era':'" .. eraName .. "',"
+    json = json .. "'leader':'" .. (pPlayerConfig:GetLeaderName() or "Unknown") .. "',"
+    
+    json = json .. "'yields':{"
+        json = json .. "'science':" .. science .. ","
+        json = json .. "'culture':" .. culture .. ","
+        json = json .. "'faith':" .. faith .. ","
+        json = json .. "'gold':" .. gold .. ","
+        json = json .. "'production':" .. totalProd .. ","
+        json = json .. "'food':" .. totalFood
+    json = json .. "},"
+
+    -- Serialize Cities Array
+    json = json .. "'cities':["
+    for i, c in ipairs(citiesData) do
+        -- Sanitize names to prevent JSON breaks
+        local safeProd = string.gsub(c.prod, "'", "")
+        local safeName = string.gsub(c.name, "'", "")
+        json = json .. "{'name':'" .. safeName .. "','pop':" .. c.pop .. ",'producing':'" .. safeProd .. "'}"
+        if i < #citiesData then json = json .. "," end
+    end
+    json = json .. "],"
+
+    -- Serialize Army Object
+    json = json .. "'army':{"
+    local isFirst = true
+    for k, v in pairs(unitSummary) do
+        if not isFirst then json = json .. "," end
+        -- Remove LOC_UNIT_ prefix for cleaner data if desired, but raw is safer for now
+        json = json .. "'" .. k .. "':" .. v
+        isFirst = false
+    end
+    json = json .. "},"
+
+    json = json .. "'currentResearch':{"
+        json = json .. "'name':'" .. techName .. "',"
+        json = json .. "'progress':" .. techProgress .. ","
+        json = json .. "'turnsLeft':" .. techTurns
+    json = json .. "},"
+    json = json .. "'currentCivic':{"
+        json = json .. "'name':'" .. civicName .. "',"
+        json = json .. "'progress':" .. civicProgress .. ","
+        json = json .. "'turnsLeft':" .. civicTurns
+    json = json .. "}"
+    json = json .. "}"
+
+    print(json)
+end
+
+Events.TurnBegin.Add(OnTurnBegin)
+```
+
+### 2\. The Verification: Update the Schema
+
+The server needs to know that `cities` and `army` are now legal data, otherwise it will reject the update.
+
+**File:** `shared/schema.ts`
+
+```typescript
+import { pgTable, text, varchar } from "drizzle-orm/pg-core";
+import { createInsertSchema } from "drizzle-zod";
+import { z } from "zod";
+
+// ... (Keep existing User schema code) ...
+
+export const gameStateSchema = z.object({
+  gameSpeed: z.string().optional(),
+  turn: z.number(),
+  era: z.string(),
+  leader: z.string(),
+  yields: z.object({
+    science: z.number(),
+    culture: z.number(),
+    faith: z.number(),
+    gold: z.number(),
+    production: z.number(),
+    food: z.number(),
+  }),
+  // --- NEW FIELDS START ---
+  cities: z.array(z.object({
+    name: z.string(),
+    pop: z.number(),
+    producing: z.string(),
+  })).optional(), // Optional so old data doesn't break
+  army: z.record(z.string(), z.number()).optional(),
+  // --- NEW FIELDS END ---
+  currentResearch: z.object({
+    name: z.string(),
+    turnsLeft: z.number(),
+    progress: z.number(),
+    icon: z.string().optional(),
+  }).optional(),
+  currentCivic: z.object({
+    name: z.string(),
+    turnsLeft: z.number(),
+    progress: z.number(),
+    icon: z.string().optional(),
+  }).optional(),
+  alerts: z.array(z.any()).optional(),
+  recommendations: z.array(z.any()).optional(),
+});
+
+export type GameState = z.infer<typeof gameStateSchema>;
+```
+
+### 3\. The Brain: Update Strategos Prompt
+
+Now we teach the AI to look at this new data and get aggressive about your build choices.
+
+**File:** `server/strategos_prompt.md`
+
+```markdown
+# IDENTITY
+You are **Strategos**, a Grandmaster Civilization VI Coach. Your source of truth is "Herson's Competitive Multiplayer Guide." You do not give generic advice; you give ruthless, efficiency-focused commands to help the player win on Deity/Multiplayer difficulty.
+
+# CORE PHILOSOPHY (The "Meta")
+1.  **Tempo is King:** Never hard-build what you can upgrade. Pre-build Chariots to upgrade to Knights. Pre-build Bombards to upgrade to Artillery.
+2.  **Culture > Science:** In the early game (Turns 1-50), Culture is more valuable than Science. You MUST rush **Feudalism** (Civic) for the **Serfdom** policy (+2 Builder charges).
+3.  **District Discounting:** Place districts as soon as population allows to "lock in" the production cost, even if you don't build them yet.
+4.  **Military Composition:** Do not build "balanced" armies. Build power spikes. (e.g. 5 Crossbowmen + 2 Horsemen).
+5.  **Pillaging:** If behind in Science, do not build Campuses. Build units and pillage neighbors. 1 Pillage = 3 turns of research.
+
+# INSTRUCTIONS
+You will receive a JSON object representing the user's **Game State**. 
+**NEW:** You now have access to `cities` (what they are building) and `army` (unit counts). **USE THIS DATA.**
+
+# ANALYSIS RULES
+- **Check Production:** If a city has >6 Population and is building a Granary or Monument, yell at them. They should be building a District or a Settler.
+- **Check Army:** If they have 0 Siege units and are in the Medieval era, warn them they cannot take cities.
+- **Check Expansion:** If it is Turn 30 and they have < 3 Cities (count the entries in `cities`), mark them as failing expansion.
+
+# OUTPUT FORMAT (JSON ONLY)
+{
+  "grade": "S", // Options: S, A, B, C, D, F. Grade their current tempo.
+  "status_summary": "A 1-sentence ruthless summary. Mention specific cities or units if relevant (e.g., 'Rome is wasting time building a Water Mill; switch to a Settler').",
+  "bottleneck": "The #1 thing holding them back right now (e.g., 'Lack of Builders', 'Low Culture', 'No Siege Units').",
+  "auto_suggest": {
+    "tech": "Name of the EXACT next technology they should click.",
+    "civic": "Name of the EXACT next civic they should click.",
+    "production": "What their capital should produce next."
+  },
+  "next_moves": [
+    {
+      "type": "immediate",
+      "action": "A specific command using the new data (e.g., 'You have 4 Archers. Research Machinery to upgrade them to Crossbows immediately.').",
+      "reason": "The strategic 'Why'."
+    },
+    {
+      "type": "planning",
+      "action": "A setup move (e.g., 'Switch Rome from Granary to Commercial Hub.').",
+      "reason": "Explanation (e.g., 'You need the trade route capacity more than +1 Food.')."
+    }
+  ],
+  "expert_tip": "A specific mechanics tip relevant to their Civ or situation."
+}
+```
+
+**Next Steps:**
+
+1.  Save these files.
+2.  Restart the Replit server (to pick up the new Schema).
+3.  Update the file on your PC.
+4.  Play a turn. You will notice the "Strategos" panel (when you click the button) will now give you *scary accurate* advice about specific cities and units.

@@ -1,4 +1,4 @@
--- DataExporter.lua v2 - Bulletproof version
+-- DataExporter.lua v3 - Phase 3: Deep Intel Version
 function OnTurnBegin()
     local iPlayer = Game.GetLocalPlayer()
     if not iPlayer or iPlayer == -1 then return end
@@ -53,9 +53,11 @@ function OnTurnBegin()
         if pReligion then faith = math.floor(pReligion:GetFaithYield()) end
     end)
 
-    -- CITY YIELDS
+    -- CITY YIELDS AND PRODUCTION DATA (NEW)
     local totalProd = 0
     local totalFood = 0
+    local citiesData = {}
+    
     pcall(function()
         local cities = pPlayer:GetCities()
         if cities then
@@ -63,6 +65,45 @@ function OnTurnBegin()
                 if pCity then
                     totalFood = totalFood + pCity:GetYield(0)
                     totalProd = totalProd + pCity:GetYield(1)
+                    
+                    -- Get what the city is currently producing
+                    local currentProduction = "Nothing"
+                    pcall(function()
+                        local buildQueue = pCity:GetBuildQueue()
+                        if buildQueue then
+                            local hash = buildQueue:GetCurrentProductionTypeHash()
+                            if hash and hash ~= 0 then
+                                local info = GameInfo.Units[hash] or GameInfo.Buildings[hash] or GameInfo.Districts[hash] or GameInfo.Projects[hash]
+                                if info then currentProduction = info.Name end
+                            end
+                        end
+                    end)
+                    
+                    local safeName = tostring(pCity:GetName() or "City"):gsub("'", "")
+                    local safeProd = tostring(currentProduction):gsub("'", "")
+                    table.insert(citiesData, {
+                        name = safeName,
+                        pop = pCity:GetPopulation(),
+                        producing = safeProd
+                    })
+                end
+            end
+        end
+    end)
+
+    -- ARMY COMPOSITION (NEW)
+    local unitSummary = {}
+    pcall(function()
+        local units = pPlayer:GetUnits()
+        if units then
+            for i, unit in units:Members() do
+                if unit then
+                    local unitType = unit:GetUnitType()
+                    local unitInfo = GameInfo.Units[unitType]
+                    if unitInfo then
+                        local name = unitInfo.Name
+                        unitSummary[name] = (unitSummary[name] or 0) + 1
+                    end
                 end
             end
         end
@@ -142,6 +183,25 @@ function OnTurnBegin()
         json = json .. "'production':" .. tostring(totalProd) .. ","
         json = json .. "'food':" .. tostring(totalFood)
     json = json .. "},"
+    
+    -- Serialize Cities Array (NEW)
+    json = json .. "'cities':["
+    for i, c in ipairs(citiesData) do
+        json = json .. "{'name':'" .. c.name .. "','pop':" .. c.pop .. ",'producing':'" .. c.producing .. "'}"
+        if i < #citiesData then json = json .. "," end
+    end
+    json = json .. "],"
+    
+    -- Serialize Army Object (NEW)
+    json = json .. "'army':{"
+    local isFirst = true
+    for k, v in pairs(unitSummary) do
+        if not isFirst then json = json .. "," end
+        json = json .. "'" .. k .. "':" .. v
+        isFirst = false
+    end
+    json = json .. "},"
+    
     json = json .. "'currentResearch':{"
         json = json .. "'name':'" .. tostring(techName) .. "',"
         json = json .. "'progress':" .. tostring(techProgress) .. ","
