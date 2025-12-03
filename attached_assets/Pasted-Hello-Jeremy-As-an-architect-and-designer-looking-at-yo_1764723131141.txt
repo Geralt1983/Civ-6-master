@@ -1,0 +1,47 @@
+Hello Jeremy. As an architect and designer looking at your Civ 6 Companion, I see a solid foundation. To respect your time and exhaustion levels, my recommendations focus on high-impact changes to make the data glanceable and the learning curve passive.
+Here is the breakdown for transforming this into a polished, expert-making tool.
+1. UI/Visual Design: "The Golden Age Interface"
+Goal: Reduce cognitive load. You should know your status in 3 seconds, not 30.
+ * The "Traffic Light" yield system:
+   * Currently, you display raw numbers (e.g., Science: +84.5).
+   * Recommendation: Color-code the background or border of the StatCard based on the BENCHMARKS in your database.
+     * Green: Above benchmark (Great).
+     * Yellow: Within 10% (Okay).
+     * Red: Below benchmark (Critical).
+   * Why: You don't have to remember that "84 science is bad for turn 142." The UI tells you immediately with red.
+ * Tactical Focus Mode:
+   * Your StrategosPanel returns a lot of text.
+   * Recommendation: implement a "One Big Thing" UI. Top center of the screen should display only the bottleneck returned by the AI.
+   * Why: When you are tired, you can’t process a list of 5 moves. You need the one move that unblocks your empire.
+ * Action Items:
+   * Update StatCard.tsx to accept a status prop ('critical', 'warning', 'good') derived from advisor.ts.
+   * Style the bottleneck badge in StrategosPanel to be 2x larger and animated.
+2. User Experience: "Passive Coaching"
+Goal: Teach you the "Meta" without you realizing you are studying.
+ * The "Why" Tooltip:
+   * Your AI returns a reason for every move.
+   * Recommendation: Hide the reasoning behind an "info" icon or tooltip.
+   * Why: Keeps the interface clean for quick execution, but allows you to hover and learn why that move matters when you have a second to breathe.
+ * Visual Benchmarking (The Gap):
+   * Recommendation: In your charts or progress bars, render a "Ghost Bar" behind your actual progress bar representing the Target for the current turn.
+   * Why: Visualizing the gap (e.g., "I am 50% behind the target") triggers a stronger urgency response than reading text.
+ * Action Items:
+   * Add a Tooltip component to the ActionList items containing the reason.
+   * Modify the progress bars in home.tsx to show a secondary, fainter bar representing the BENCHMARKS value for the current turn.
+3. Architecture: "Resilient Bridge"
+Goal: Ensure the tool works even when you alt-tab or the network hiccups.
+ * Local Caching (Session Resilience):
+   * Currently, MemStorage (RAM) wipes data if the Replit container restarts (which happens often).
+   * Recommendation: Add a simple file-based persistence or use the browser's localStorage on the client side to hydrate the state if the server comes back empty.
+   * Why: You don't want to lose your "Grade" and history just because the server slept.
+ * Input Debouncing:
+   * Civ 6 writes to logs frequently during a turn.
+   * Recommendation: In bridge.js, increase the throttle/debounce time from 500ms to 2000ms.
+   * Why: Prevents the "False Positive" saves you encountered and reduces API spam, ensuring only the final state of the turn is analyzed by the AI.
+ * Action Items:
+   * In bridge-final.js, change lastPostTime logic to use a setTimeout debounce rather than a simple throttle.
+   * In client/src/hooks/useGameState.ts, save incoming websocket data to localStorage.
+Summary
+ * Visuals: Color-code stats based on benchmarks (Green/Red).
+ * Learning: Show the "Ghost Bar" target vs. actual.
+ * Tech: Debounce the bridge to stop API flooding.
