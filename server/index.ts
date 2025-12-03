@@ -41,6 +41,11 @@ app.use((req, res, next) => {
   const path = req.path;
   let capturedJsonResponse: Record<string, any> | undefined = undefined;
 
+  // Log all incoming requests immediately
+  if (path.startsWith("/api")) {
+    console.log(`📬 [${req.method}] ${path} - Body:`, req.body ? Object.keys(req.body) : "none");
+  }
+
   const originalResJson = res.json;
   res.json = function (bodyJson, ...args) {
     capturedJsonResponse = bodyJson;
