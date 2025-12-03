@@ -1,0 +1,274 @@
+As the **Chief Architect** hired by Firaxis, I have reviewed your current architecture.
+
+You have successfully built the **"Skeleton"** (Data Pipeline) and the **"Reflexes"** (Static Rules Engine). Your app knows *what* is happening and can react to basic triggers.
+
+But to **create experts**, the app needs a **"Brain."** It needs to teach **Critical Thinking**, not just obedience. An expert player doesn't just follow a build order; they adapt to terrain, neighbors, and tempo.
+
+Here is the **Phase 3 Architecture** to turn this into an Award-Winning Coaching Platform.
+
+### **The Master Plan: "Project Strategos"**
+
+We are going to add a **Generative AI Layer** (using OpenAI or Gemini) that acts as a live Grandmaster Coach. It will not just give alerts; it will explain the *strategic theory* behind the move.
+
+#### **1. The "Brain" (System Prompt)**
+
+We need a prompt that forces the AI to think like a competitive champion (Herson).
+
+**Action:** Create `server/strategos_prompt.md`
+This file instructs the AI on how to analyze the JSON data.
+
+```markdown
+# IDENTITY
+You are **Strategos**, the Grandmaster AI Coach for Civilization VI.
+Your goal is to teach the user to play at a **Deity/Competitive Multiplayer (CPL)** level.
+You do not coddle. You focus on **Tempo**, **Efficiency**, and **Win Conditions**.
+
+# ANALYSIS FRAMEWORK
+You will receive the player's live **Game State** (Turn, Yields, Techs, Leader).
+You must analyze it against **"Online Speed" Benchmarks**.
+*If the user is on Standard Speed, mentally divide their turn by 2.*
+
+# OUTPUT FORMAT (JSON ONLY)
+{
+  "analysis": {
+    "tempo_grade": "S/A/B/C/D/F",
+    "tempo_reason": "One ruthless sentence explaining the grade (e.g. 'Turn 60 Science is 20% below benchmark; you are vulnerable to Knights').",
+    "main_bottleneck": "The single factor holding them back (e.g. 'Lack of Builders', 'Low Culture', 'No Iron')."
+  },
+  "teaching_moment": "Explain a high-level concept relevant to this exact moment. (e.g. 'In this era, pre-building Chariots is cheaper than building Knights. Switch production now.').",
+  "next_moves": [
+    {
+      "action": "Specific command (e.g. 'Research Stirrups')",
+      "reason": "Strategic justification (e.g. 'To hit the Medieval Timing Push before walls go up')."
+    }
+  ]
+}
+```
+
+#### **2. The "Nerve Center" (Server API)**
+
+We need a route that sends your live game state + the prompt to the AI.
+
+**Action:** Update `server/routes.ts`
+*(You will need an API Key from OpenAI or Anthropic for this to work live. For now, I’ve added a mock response mode so you can build the UI first.)*
+
+```typescript
+import OpenAI from "openai"; // npm install openai
+import fs from "fs";
+import path from "path";
+
+// Initialize OpenAI (Set OPENAI_API_KEY in Replit Secrets)
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+export async function registerRoutes(httpServer: Server, app: Express) {
+  
+  // ... (Your existing /api/gamestate routes here) ...
+
+  // --- NEW: AI Coach Endpoint ---
+  app.post("/api/ask-strategos", async (req, res) => {
+    try {
+      const gameState = req.body;
+      
+      // Load the Brain
+      const promptPath = path.join(process.cwd(), "server", "strategos_prompt.md");
+      let systemPrompt = "";
+      
+      try {
+        systemPrompt = fs.readFileSync(promptPath, "utf-8");
+      } catch (e) {
+        systemPrompt = "You are a Civ 6 Expert."; // Fallback
+      }
+
+      // --- REAL AI CALL (Uncomment when you have a Key) ---
+      /*
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4-turbo",
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: JSON.stringify(gameState) }
+        ],
+        response_format: { type: "json_object" }
+      });
+      const advice = JSON.parse(completion.choices[0].message.content);
+      */
+
+      // --- MOCK RESPONSE (For Testing UI) ---
+      const advice = {
+        analysis: {
+          tempo_grade: "B-",
+          tempo_reason: `Turn ${gameState.turn} Science is acceptable, but Culture is lagging behind benchmark.`,
+          main_bottleneck: "Low Culture / Government Delay"
+        },
+        teaching_moment: "Culture is the 'hidden' science. Without Feudalism (Civic), your builders are 30% less efficient. You are losing production every turn you delay this.",
+        next_moves: [
+          { action: "Build Monuments in all cities", reason: "Immediate Culture boost needed." },
+          { action: "Pingala in Capital", reason: "Double Great Person points and +15% yields." }
+        ]
+      };
+
+      res.json(advice);
+
+    } catch (error) {
+      console.error("AI Error:", error);
+      res.status(500).json({ error: "Strategos Offline" });
+    }
+  });
+
+  return httpServer;
+}
+```
+
+#### **3. The "Command Deck" (Frontend UI)**
+
+This is the award-winning UI part. We need a dedicated panel that looks like a futuristic AI interface.
+
+**Action:** Create `client/src/components/civ/StrategosPanel.tsx`
+
+```typescript
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Brain, Sparkles, TrendingUp, AlertOctagon } from "lucide-react";
+import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+
+interface StrategosResponse {
+  analysis: {
+    tempo_grade: string;
+    tempo_reason: string;
+    main_bottleneck: string;
+  };
+  teaching_moment: string;
+  next_moves: { action: string; reason: string }[];
+}
+
+export function StrategosPanel({ gameState }: { gameState: any }) {
+  const [advice, setAdvice] = useState<StrategosResponse | null>(null);
+
+  const mutation = useMutation({
+    mutationFn: async (data: any) => {
+      const res = await apiRequest("POST", "/api/ask-strategos", data);
+      return res.json();
+    },
+    onSuccess: (data) => setAdvice(data),
+  });
+
+  const getGradeColor = (grade: string) => {
+    if (grade.startsWith("S") || grade.startsWith("A")) return "text-emerald-400";
+    if (grade.startsWith("B") || grade.startsWith("C")) return "text-yellow-400";
+    return "text-rose-500";
+  };
+
+  return (
+    <Card className="glass-panel border-primary/30 bg-black/40 h-full flex flex-col">
+      <CardHeader className="pb-2 border-b border-white/5">
+        <div className="flex justify-between items-center">
+          <CardTitle className="text-xl font-serif tracking-widest text-primary flex items-center gap-2">
+            <Brain className="w-5 h-5" /> STRATEGOS AI
+          </CardTitle>
+          <Button 
+            size="sm" 
+            variant="outline" 
+            className="border-primary/50 text-primary hover:bg-primary/10"
+            onClick={() => mutation.mutate(gameState)}
+            disabled={mutation.isPending}
+          >
+            {mutation.isPending ? <Sparkles className="w-4 h-4 animate-spin" /> : "Analyze Turn"}
+          </Button>
+        </div>
+      </CardHeader>
+      
+      <CardContent className="flex-1 p-4 space-y-5 overflow-y-auto custom-scrollbar">
+        {advice ? (
+          <>
+            {/* Grade Section */}
+            <div className="flex items-center justify-between bg-white/5 p-4 rounded-lg border border-white/10">
+              <div>
+                <p className="text-xs text-muted-foreground uppercase tracking-wider">Tempo Grade</p>
+                <div className={`text-5xl font-black font-mono mt-1 ${getGradeColor(advice.analysis.tempo_grade)}`}>
+                  {advice.analysis.tempo_grade}
+                </div>
+              </div>
+              <div className="text-right max-w-[60%]">
+                <p className="text-sm italic text-gray-300">"{advice.analysis.tempo_reason}"</p>
+              </div>
+            </div>
+
+            {/* Bottleneck Alert */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-rose-400 text-xs font-bold uppercase tracking-wider">
+                <AlertOctagon className="w-4 h-4" /> Major Bottleneck
+              </div>
+              <div className="bg-rose-950/30 border border-rose-500/20 p-3 rounded text-rose-200 text-sm">
+                {advice.analysis.main_bottleneck}
+              </div>
+            </div>
+
+            {/* The "Professor" Moment */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-blue-400 text-xs font-bold uppercase tracking-wider">
+                <Sparkles className="w-4 h-4" /> Expert Concept
+              </div>
+              <p className="text-sm text-gray-300 leading-relaxed bg-blue-950/20 p-3 rounded border border-blue-500/10">
+                {advice.teaching_moment}
+              </p>
+            </div>
+
+            {/* Action Plan */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold uppercase tracking-wider">
+                <TrendingUp className="w-4 h-4" /> Optimal Moves
+              </div>
+              {advice.next_moves.map((move, i) => (
+                <div key={i} className="group p-3 rounded bg-white/5 hover:bg-white/10 border border-white/5 hover:border-emerald-500/30 transition-all">
+                  <div className="font-bold text-sm text-foreground">{move.action}</div>
+                  <div className="text-xs text-muted-foreground mt-1">{move.reason}</div>
+                </div>
+              ))}
+            </div>
+          </>
+        ) : (
+          <div className="h-full flex flex-col items-center justify-center text-muted-foreground gap-4 opacity-50">
+            <Brain className="w-16 h-16 stroke-1" />
+            <p className="text-sm font-mono text-center">
+              Awaiting Neural Link...<br/>
+              Click "Analyze Turn" to synchronize.
+            </p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+```
+
+#### **4. Integrate into Dashboard (`home.tsx`)**
+
+Replace the static `AnalysisPanel` with our new AI Brain.
+
+**Action:** Update `client/src/pages/home.tsx`
+
+```typescript
+import { StrategosPanel } from "@/components/civ/StrategosPanel";
+
+// ... inside the Grid Layout ...
+
+{/* Center Column: Replaced AnalysisPanel with StrategosPanel */}
+<div className="col-span-6 h-full flex flex-col gap-6">
+  <div className="h-2/3"> {/* Give it more height */}
+    <StrategosPanel gameState={state} />
+  </div>
+  
+  {/* Current Progress Cards (Tech/Civic) remain below... */}
+  <div className="grid grid-cols-2 gap-6 h-1/3">
+     {/* ... existing tech/civic cards ... */}
+  </div>
+</div>
+```
+
+### **Next Steps**
+
+1.  **Implement** these files in Replit.
+2.  **Verify** the UI loads with the "Awaiting Neural Link" screen.
+3.  **Click "Analyze Turn"**. Since I included a mock response in the server code, it should immediately simulate an AI analysis (giving you a "B-" grade).
+4.  **Go Live:** Once you confirm the UI looks award-winning, sign up for an OpenAI API key and uncomment the real AI code in `server/routes.ts`.
