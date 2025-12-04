@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Mod id="civ6companion-data-exporter" version="1">
+	<Properties>
+		<Name>Civ 6 Companion Exporter</Name>
+		<Teaser>Exports game data to Lua.log for the Companion App</Teaser>
+		<Description>Exports yields, cities, and army composition to Lua.log for real-time strategic coaching</Description>
+		<Authors>Jeremy</Authors>
+		<CompatibleVersions>2.0</CompatibleVersions>
+	</Properties>
+	<InGameActions>
+		<AddGameplayScripts id="Civ6CompanionScript">
+			<File>DataExporter.lua</File>
+		</AddGameplayScripts>
+	</InGameActions>
+	<Files>
+		<File>DataExporter.lua</File>
+	</Files>
+</Mod>
