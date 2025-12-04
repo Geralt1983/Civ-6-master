@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Mod id="01234567-89ab-cdef-0123-456789abcdef" version="1">
+	<Properties>
+		<Name>Civ6Companion Data Exporter</Name>
+		<Teaser>Exports game state data for companion app analysis</Teaser>
+		<Description>Exports yields, cities, and army composition to Lua.log for real-time strategic coaching</Description>
+		<Authors>Jeremy</Authors>
+		<SpecialThanks></SpecialThanks>
+	</Properties>
+	<Dependencies>
+		<Mod id="0E78A267-9640-43CC-8AC8-210E21D4A17D" title="Civilization VI"/>
+	</Dependencies>
+	<IncompatibleMods>
+	</IncompatibleMods>
+	<Blocks>
+	</Blocks>
+	<References>
+	</References>
+	<ModContent>
+		<Items>
+			<Item>
+				<Properties>
+					<LoadOrder>9999</LoadOrder>
+				</Properties>
+			</Item>
+		</Items>
+	</ModContent>
+</Mod>
