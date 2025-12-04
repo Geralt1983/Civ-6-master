@@ -5,13 +5,29 @@ import { ActionList } from "@/components/civ/ActionList";
 import { AnalysisPanel } from "@/components/civ/AnalysisPanel";
 import { StrategosPanel, StrategosAdvice } from "@/components/civ/StrategosPanel";
 import { YieldChart } from "@/components/civ/YieldChart";
-import { Beaker, Music, Anchor, Coins, Hammer, Wheat, Menu, Settings, User, Wifi, WifiOff, Brain } from "lucide-react";
+import { Beaker, Music, Anchor, Coins, Hammer, Wheat, Menu, Settings, User, Wifi, WifiOff, Brain, RefreshCw, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { generateAdvice } from "@/lib/advisor";
 import { BENCHMARKS } from "@/lib/strategyDb";
 import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import generatedImage from '@assets/generated_images/a_dark,_textured_hex_map_background_for_a_strategy_game_interface.png';
+
+// Force-Clean the "LOC_" Garbage
+const cleanText = (text: string) => {
+  if (!text) return "Unknown";
+  return text
+    .replace("LOC_LEADER_", "")
+    .replace("LOC_CIVILIZATION_", "")
+    .replace("LOC_ERA_", "")
+    .replace("LOC_DISTRICT_", "")
+    .replace("LOC_BUILDING_", "")
+    .replace("LOC_UNIT_", "")
+    .replace(/_NAME/g, "")
+    .replace(/_/g, " ")
+    .toLowerCase()
+    .replace(/\b\w/g, c => c.toUpperCase()); // Title Case
+};
 
 export default function Dashboard() {
   const queryClient = useQueryClient();
@@ -84,6 +100,8 @@ export default function Dashboard() {
   
   const state = {
     ...baseState,
+    leader: cleanText(baseState.leader),
+    era: cleanText(baseState.era),
     alerts: advice.alerts,
     recommendations: advice.recommendations.length > 0 ? advice.recommendations : (baseState.recommendations || [])
   };
