@@ -20,12 +20,13 @@ function OnTurnBegin()
         end
     end)
     
-    -- ERA
+    -- ERA (resolve localization key to actual name)
     local eraName = "Ancient Era"
     pcall(function()
         local eraIndex = pPlayer:GetEra()
         if eraIndex and GameInfo.Eras[eraIndex] then
-            eraName = GameInfo.Eras[eraIndex].Name or "Ancient Era"
+            local eraKey = GameInfo.Eras[eraIndex].Name or "LOC_ERA_ANCIENT_NAME"
+            eraName = Locale.Lookup(eraKey)
         end
     end)
 
@@ -75,7 +76,9 @@ function OnTurnBegin()
                             local hash = buildQueue:GetCurrentProductionTypeHash()
                             if hash and hash ~= 0 then
                                 local info = GameInfo.Units[hash] or GameInfo.Buildings[hash] or GameInfo.Districts[hash] or GameInfo.Projects[hash]
-                                if info then currentProduction = info.Name end
+                                if info then 
+                                    currentProduction = Locale.Lookup(info.Name)
+                                end
                             end
                         end
                     end)
@@ -102,7 +105,7 @@ function OnTurnBegin()
                     local unitType = unit:GetUnitType()
                     local unitInfo = GameInfo.Units[unitType]
                     if unitInfo then
-                        local name = unitInfo.Name
+                        local name = Locale.Lookup(unitInfo.Name)
                         unitSummary[name] = (unitSummary[name] or 0) + 1
                     end
                 end
@@ -123,7 +126,7 @@ function OnTurnBegin()
         if currentTechID and currentTechID ~= -1 then
             local techInfo = GameInfo.Technologies[currentTechID]
             if techInfo and techInfo.Name then
-                techName = techInfo.Name
+                techName = Locale.Lookup(techInfo.Name)
                 local cost = pTechs:GetResearchCost(currentTechID)
                 local current = pTechs:GetResearchProgress(currentTechID)
                 if cost and cost > 0 then 
@@ -149,7 +152,7 @@ function OnTurnBegin()
         if currentCivicID and currentCivicID ~= -1 then
             local civicInfo = GameInfo.Civics[currentCivicID]
             if civicInfo and civicInfo.Name then
-                civicName = civicInfo.Name
+                civicName = Locale.Lookup(civicInfo.Name)
                 local cost = pCulture:GetCultureCost(currentCivicID)
                 local current = pCulture:GetCulturalProgress(currentCivicID)
                 if cost and cost > 0 then 
@@ -166,7 +169,7 @@ function OnTurnBegin()
     local leaderName = "Unknown"
     pcall(function()
         if pPlayerConfig:GetLeaderName() then
-            leaderName = pPlayerConfig:GetLeaderName()
+            leaderName = Locale.Lookup(pPlayerConfig:GetLeaderName())
         end
     end)
 
